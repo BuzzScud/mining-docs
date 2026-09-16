@@ -235,6 +235,14 @@
   a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--ember); outline-offset:3px}
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
   @media (max-width:640px){
+    /* reclaim the page gutters for wide, scrolling content */
+    /* the wordmark wrapped to four lines and crushed the nav; the hero states the title anyway */
+    .bar b{display:none}
+    .bar{justify-content:flex-start}
+    .figbox,.tablewrap{margin-inline:-20px; border-left:none; border-right:none}
+    .figbox{padding-inline:14px}
+    /* the diagrams scroll sideways at this width - say so, in the caption under them */
+    figcaption::before{content:"Scroll the diagram sideways to see all of it. "; color:var(--ember)}
     .stage{grid-template-columns:1fr; gap:0}
     .rail span{position:static; font-size:2rem; margin-bottom:12px}
     .rail span::after{margin-top:6px}
