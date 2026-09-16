@@ -1,0 +1,2 @@
+# mining-docs
+mining docs
