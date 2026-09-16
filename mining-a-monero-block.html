@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Mining a Monero Block</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -228,7 +230,7 @@
   .split ul{margin:0}
   .public h4{color:var(--ember-ink)}
   .hidden h4{color:var(--cool)}
-  .public li::before{background:var(--ember)}
+  .split .public li::before{background:var(--ember)}
 
   a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--ember); outline-offset:3px}
   @media (prefers-reduced-motion:reduce){*{animation:none!important; transition:none!important}}
@@ -286,7 +288,7 @@
 
           <rect class="box" x="0" y="44" width="150" height="58"/>
           <text class="svg-label" x="75" y="68" text-anchor="middle">block template</text>
-          <text class="svg-small" x="75" y="86" text-anchor="middle">prev_id · difficulty · txs</text>
+          <text class="svg-small" x="75" y="86" text-anchor="middle">prev_id &middot; difficulty</text>
 
           <rect class="box" x="186" y="44" width="150" height="58"/>
           <text class="svg-label" x="261" y="68" text-anchor="middle">coinbase tx</text>
@@ -434,7 +436,7 @@ B &gt; 2M  &rarr;  block invalid</div>
             <text class="svg-label hot-text" x="682" y="62" text-anchor="end">hard reject beyond 2M</text>
             <text class="svg-small" x="96" y="122">nearly free here</text>
             <line x1="132" y1="112" x2="140" y2="50" stroke="currentColor" stroke-width="1" opacity=".45"/>
-            <text class="svg-small" x="392" y="188">marginal cost rises linearly in the overage</text>
+            <text class="svg-small" x="110" y="238">marginal cost rises linearly in the overage</text>
           </svg>
         </div>
         <figcaption>Reward = 0.6 &times; (1 &minus; (B/M &minus; 1)&sup2;). The curve is flat at the median, so a little growth is almost free &mdash; which is how Monero's block size grows with real demand &mdash; but marginal cost climbs steadily and reaches total confiscation at 2M.</figcaption>
@@ -543,32 +545,37 @@ M = min( max(short_term_median, long_term_median), 50 &times; long_term_median )
     <figure>
       <div class="figbox">
         <svg viewBox="0 0 980 268" role="img" aria-label="RandomX asymmetry: a seed expands via Argon2d into a 256 megabyte cache, which miners further expand via SuperscalarHash into a 2 gigabyte dataset for fast hashing, while verifiers hash directly from the 256 megabyte cache in light mode.">
+          <defs>
+            <marker id="rx-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="currentColor"/></marker>
+            <marker id="rx-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="var(--ember)"/></marker>
+            <marker id="rx-cool" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="var(--cool)"/></marker>
+          </defs>
           <text class="svg-title" x="0" y="16">ONE SEED, TWO PATHS</text>
 
           <rect class="box" x="0" y="96" width="132" height="58"/>
           <text class="svg-label" x="66" y="120" text-anchor="middle">seed</text>
           <text class="svg-small" x="66" y="138" text-anchor="middle">block ~N−2048</text>
 
-          <path class="flow" d="M132 125 H186" marker-end="url(#ar)"/>
+          <path class="flow" d="M132 125 H186" marker-end="url(#rx-a)"/>
           <text class="svg-small" x="159" y="114" text-anchor="middle">Argon2d</text>
 
           <rect class="box" x="192" y="96" width="150" height="58"/>
           <text class="svg-label" x="267" y="120" text-anchor="middle">cache</text>
           <text class="svg-small" x="267" y="138" text-anchor="middle">256 MB</text>
 
-          <path class="flow-hot" d="M342 111 H396 V70 H450" marker-end="url(#ar-hot)"/>
+          <path class="flow-hot" d="M342 111 H396 V70 H450" marker-end="url(#rx-hot)"/>
           <text class="svg-small hot-text" x="400" y="60" text-anchor="start">SuperscalarHash · seconds to a minute</text>
 
           <rect class="box-hot" x="456" y="42" width="170" height="56"/>
           <text class="svg-label hot-text" x="541" y="66" text-anchor="middle">dataset · 2 GB</text>
           <text class="svg-small hot-text" x="541" y="84" text-anchor="middle">fast mode</text>
 
-          <path class="flow-hot" d="M626 70 H686" marker-end="url(#ar-hot)"/>
+          <path class="flow-hot" d="M626 70 H686" marker-end="url(#rx-hot)"/>
           <rect class="box-hot" x="692" y="42" width="180" height="56"/>
           <text class="svg-label hot-text" x="782" y="66" text-anchor="middle">MINER</text>
           <text class="svg-small hot-text" x="782" y="84" text-anchor="middle">billions of hashes</text>
 
-          <path class="flow-cool" d="M342 139 H396 V196 H686" marker-end="url(#ar-cool)"/>
+          <path class="flow-cool" d="M342 139 H396 V196 H686" marker-end="url(#rx-cool)"/>
           <text class="svg-small cool-text" x="400" y="186" text-anchor="start">light mode · no expansion, ~10× slower per hash</text>
 
           <rect class="box-cool" x="692" y="168" width="180" height="56"/>
@@ -864,6 +871,11 @@ P(zero blocks in a whole year) = e^(&minus;0.53) = 59%</div>
     <figure>
       <div class="figbox">
         <svg viewBox="0 0 980 300" role="img" aria-label="Comparison of a traditional pool and P2Pool. In a traditional pool the operator builds the template, chooses transactions, receives the entire reward and pays miners out after a fee. In P2Pool each miner builds their own template and the Monero coinbase pays every share contributor directly.">
+          <defs>
+            <marker id="pl-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="currentColor"/></marker>
+            <marker id="pl-hot" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="var(--ember)"/></marker>
+            <marker id="pl-cool" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><polygon points="0,1 10,5 0,9" fill="var(--cool)"/></marker>
+          </defs>
           <text class="svg-title" x="0" y="16">WHO HOLDS THE TEMPLATE</text>
 
           <text class="svg-label" x="0" y="52">TRADITIONAL POOL</text>
@@ -873,7 +885,7 @@ P(zero blocks in a whole year) = e^(&minus;0.53) = 59%</div>
           <text class="svg-small" x="59" y="101" text-anchor="middle">your CPU</text>
           <text class="svg-small" x="59" y="117" text-anchor="middle">hashes only</text>
 
-          <path class="flow" d="M118 105 H166" marker-end="url(#ar)"/>
+          <path class="flow" d="M118 105 H166" marker-end="url(#pl-a)"/>
           <text class="svg-small" x="142" y="96" text-anchor="middle">shares</text>
 
           <rect class="box-hot" x="172" y="70" width="140" height="70"/>
@@ -881,12 +893,12 @@ P(zero blocks in a whole year) = e^(&minus;0.53) = 59%</div>
           <text class="svg-small hot-text" x="242" y="113" text-anchor="middle">builds template</text>
           <text class="svg-small hot-text" x="242" y="129" text-anchor="middle">picks your txs</text>
 
-          <path class="flow" d="M312 105 H360" marker-end="url(#ar)"/>
+          <path class="flow" d="M312 105 H360" marker-end="url(#pl-a)"/>
           <rect class="box" x="366" y="80" width="74" height="50"/>
           <text class="svg-small" x="403" y="101" text-anchor="middle">reward</text>
           <text class="svg-small" x="403" y="117" text-anchor="middle">held</text>
 
-          <path class="flow" d="M403 130 V170 H59 V138" marker-end="url(#ar)"/>
+          <path class="flow" d="M403 130 V170 H59 V138" marker-end="url(#pl-a)"/>
           <text class="svg-small" x="232" y="164" text-anchor="middle">payout, minus fee, minus trust</text>
 
           <line x1="470" y1="40" x2="470" y2="260" class="flow" opacity=".25" stroke-dasharray="3 5"/>
@@ -899,7 +911,7 @@ P(zero blocks in a whole year) = e^(&minus;0.53) = 59%</div>
           <text class="svg-small cool-text" x="585" y="110" text-anchor="middle">+ your monerod</text>
           <text class="svg-small cool-text" x="585" y="127" text-anchor="middle">builds own template</text>
 
-          <path class="flow-cool" d="M660 105 H714" marker-end="url(#ar-cool)"/>
+          <path class="flow-cool" d="M660 105 H714" marker-end="url(#pl-cool)"/>
           <text class="svg-small cool-text" x="687" y="96" text-anchor="middle">shares</text>
 
           <rect class="box-cool" x="720" y="70" width="140" height="70"/>
@@ -907,12 +919,12 @@ P(zero blocks in a whole year) = e^(&minus;0.53) = 59%</div>
           <text class="svg-small cool-text" x="790" y="113" text-anchor="middle">~10 s blocks</text>
           <text class="svg-small cool-text" x="790" y="129" text-anchor="middle">no operator</text>
 
-          <path class="flow-cool" d="M860 105 H908" marker-end="url(#ar-cool)"/>
+          <path class="flow-cool" d="M860 105 H908" marker-end="url(#pl-cool)"/>
           <rect class="box-cool" x="914" y="80" width="64" height="50"/>
           <text class="svg-small cool-text" x="946" y="101" text-anchor="middle">XMR</text>
           <text class="svg-small cool-text" x="946" y="117" text-anchor="middle">coinbase</text>
 
-          <path class="flow-cool" d="M946 130 V170 H585 V142" marker-end="url(#ar-cool)"/>
+          <path class="flow-cool" d="M946 130 V170 H585 V142" marker-end="url(#pl-cool)"/>
           <text class="svg-small cool-text" x="770" y="164" text-anchor="middle">paid directly in the block's own coinbase</text>
 
           <text class="svg-small" x="0" y="216">The edge that differs is not the payout arrow — it is who decides</text>
