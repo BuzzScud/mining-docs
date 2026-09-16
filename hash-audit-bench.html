@@ -1,0 +1,1918 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>&#128273;</text></svg>">
+<style>
+:root{color-scheme:light dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px system-ui,sans-serif}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Hash Audit Bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f5f3ef; --panel:#fffefc; --panel2:#faf8f4; --bd:#e4ded3; --bd2:#d3cabb;
+  --tx:#1b1917; --tx2:#57514a; --tx3:#8c857a;
+  --acc:#b8730d; --acc-tint:rgba(184,115,13,.09); --acc-line:rgba(184,115,13,.32);
+  --btc:#b8730d; --btc-tint:rgba(184,115,13,.09);
+  --xmr:#c2410c; --xmr-tint:rgba(194,65,12,.09);
+  --ok:#1a7f37; --ok-tint:rgba(26,127,55,.10);
+  --warn:#9a6700; --crit:#b3261e; --crit-tint:rgba(179,38,30,.09);
+  --new:#0969da; --new-tint:rgba(9,105,218,.10);
+  --sh:0 1px 2px rgba(28,25,20,.05);
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121110; --panel:#1a1917; --panel2:#201e1b; --bd:#2e2b26; --bd2:#403b34;
+  --tx:#ebe7e0; --tx2:#a49d91; --tx3:#7a7469;
+  --acc:#e8a33d; --acc-tint:rgba(232,163,61,.11); --acc-line:rgba(232,163,61,.34);
+  --btc:#e8a33d; --btc-tint:rgba(232,163,61,.11);
+  --xmr:#f97316; --xmr-tint:rgba(249,115,22,.12);
+  --ok:#3fb950; --ok-tint:rgba(63,185,80,.13);
+  --warn:#d29922; --crit:#f85149; --crit-tint:rgba(248,81,73,.12);
+  --new:#58a6ff; --new-tint:rgba(88,166,255,.13);
+  --sh:0 1px 2px rgba(0,0,0,.3);
+}}
+:root[data-theme="dark"]{
+  --bg:#121110; --panel:#1a1917; --panel2:#201e1b; --bd:#2e2b26; --bd2:#403b34;
+  --tx:#ebe7e0; --tx2:#a49d91; --tx3:#7a7469;
+  --acc:#e8a33d; --acc-tint:rgba(232,163,61,.11); --acc-line:rgba(232,163,61,.34);
+  --btc:#e8a33d; --btc-tint:rgba(232,163,61,.11);
+  --xmr:#f97316; --xmr-tint:rgba(249,115,22,.12);
+  --ok:#3fb950; --ok-tint:rgba(63,185,80,.13);
+  --warn:#d29922; --crit:#f85149; --crit-tint:rgba(248,81,73,.12);
+  --new:#58a6ff; --new-tint:rgba(88,166,255,.13);
+  --sh:0 1px 2px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:14px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px 96px}
+
+/* ---- masthead ---- */
+.mast{padding-block:28px 0}
+.mast h1{font-family:var(--cond);font-weight:700;font-size:clamp(28px,5vw,42px);letter-spacing:-.015em;
+  margin:0;text-wrap:balance}
+.mast .sub{color:var(--tx2);margin:8px 0 0;max-width:62ch}
+.mast .meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:14px;font-family:var(--mono);font-size:11px;
+  color:var(--tx3);letter-spacing:.04em;text-transform:uppercase}
+.mast .meta b{color:var(--tx2);font-weight:500}
+
+/* ---- tabs ---- */
+.tabs{display:flex;gap:2px;margin:26px 0 0;border-bottom:1px solid var(--bd);position:sticky;
+  top:env(safe-area-inset-top,0px);background:var(--bg);z-index:30;padding-top:8px}
+.tab{appearance:none;border:1px solid transparent;border-bottom:none;background:none;cursor:pointer;
+  font-family:var(--cond);font-weight:600;font-size:15px;letter-spacing:.01em;color:var(--tx3);
+  padding:10px 18px;border-radius:7px 7px 0 0;margin-bottom:-1px;display:flex;align-items:center;gap:9px}
+.tab:hover{color:var(--tx2)}
+.tab[aria-selected="true"]{color:var(--tx);background:var(--panel);border-color:var(--bd);
+  border-bottom:1px solid var(--panel)}
+.tab .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.tab:focus-visible{outline:2px solid var(--new);outline-offset:2px}
+#tab-btc .dot{background:var(--btc)} #tab-xmr .dot{background:var(--xmr)}
+.tab .algo{font-family:var(--mono);font-size:10px;font-weight:400;color:var(--tx3);letter-spacing:.03em}
+
+/* panes take their tab's accent */
+#pane-btc{--acc:var(--btc);--acc-tint:var(--btc-tint)}
+#pane-xmr{--acc:var(--xmr);--acc-tint:var(--xmr-tint)}
+
+/* ---- stage ---- */
+.stage{background:var(--panel);border:1px solid var(--bd);border-top:none;border-radius:0 0 10px 10px;
+  overflow:hidden;box-shadow:var(--sh)}
+.stage canvas{display:block;width:100%;height:auto;aspect-ratio:1180/430;max-width:100%}
+@media(max-width:700px){.stage canvas{aspect-ratio:700/470}}
+.transport{display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--bd);
+  background:var(--panel2);flex-wrap:wrap}
+.tbtn{appearance:none;border:1px solid var(--bd2);background:var(--panel);color:var(--tx);cursor:pointer;
+  border-radius:6px;width:34px;height:30px;display:grid;place-items:center;flex:none}
+.tbtn:hover{border-color:var(--acc);color:var(--acc)}
+.tbtn:focus-visible{outline:2px solid var(--new);outline-offset:2px}
+.tbtn svg{width:13px;height:13px;fill:currentColor}
+.scrub{flex:1;min-width:160px;appearance:none;height:26px;background:none;cursor:pointer}
+.scrub::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--bd2)}
+.scrub::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:var(--acc);
+  margin-top:-5px;border:2px solid var(--panel);box-shadow:0 0 0 1px var(--acc)}
+.scrub::-moz-range-track{height:4px;border-radius:2px;background:var(--bd2)}
+.scrub::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--acc);border:2px solid var(--panel)}
+.scrub:focus-visible{outline:2px solid var(--new);outline-offset:3px;border-radius:4px}
+.phase{font-family:var(--mono);font-size:11px;color:var(--tx2);letter-spacing:.03em;min-width:190px;
+  text-align:right;flex:none}
+.phase b{color:var(--acc);font-weight:500}
+.chips{display:flex;gap:3px;padding:0 14px 11px;background:var(--panel2);flex-wrap:wrap}
+.chip{appearance:none;border:1px solid var(--bd);background:var(--panel);cursor:pointer;border-radius:5px;
+  padding:4px 9px;font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.03em;white-space:nowrap}
+.chip:hover{color:var(--tx2);border-color:var(--bd2)}
+.chip[data-on="1"]{background:var(--acc-tint);border-color:var(--acc-line);color:var(--acc)}
+.chip:focus-visible{outline:2px solid var(--new);outline-offset:1px}
+
+/* ---- steps ---- */
+.steps{display:grid;grid-template-columns:52px 1fr;gap:0 20px;margin-top:38px}
+@media(max-width:640px){.steps{grid-template-columns:38px 1fr;gap:0 13px}}
+.snum{font-family:var(--mono);font-size:11px;color:var(--tx3);padding-top:16px;position:relative;letter-spacing:.06em}
+.snum::after{content:"";position:absolute;left:11px;top:40px;bottom:-4px;width:1px;background:var(--bd)}
+@media(max-width:640px){.snum::after{left:7px}}
+.step:last-child .snum::after{display:none}
+.step{display:contents}
+.sbody{padding:12px 0 30px;min-width:0}
+.sbody h2{font-family:var(--cond);font-weight:600;font-size:21px;margin:0 0 4px;letter-spacing:-.005em;text-wrap:balance}
+.sbody .lede{color:var(--tx2);margin:0 0 15px;max-width:66ch}
+.sbody h3{font-family:var(--cond);font-weight:600;font-size:14px;margin:22px 0 8px;letter-spacing:.01em;
+  text-transform:uppercase;color:var(--tx2)}
+
+/* ---- primitives ---- */
+.card{background:var(--panel);border:1px solid var(--bd);border-radius:9px;padding:15px 17px;box-shadow:var(--sh)}
+.card+.card{margin-top:11px}
+.flat{background:var(--panel2);border:1px solid var(--bd);border-radius:8px;padding:13px 15px}
+.mono{font-family:var(--mono)}
+.hex{font-family:var(--mono);font-size:12.5px;line-height:1.75;word-break:break-all;color:var(--tx)}
+.hex .z{color:var(--tx3)}
+.hex .hl{background:var(--acc-tint);color:var(--acc);border-radius:2px;padding:1px 0}
+.k{font-family:var(--mono);font-size:11px;color:var(--tx3);letter-spacing:.05em;text-transform:uppercase}
+.formula{font-family:var(--mono);font-size:13px;background:var(--panel2);border:1px solid var(--bd);
+  border-left:2px solid var(--acc);border-radius:0 7px 7px 0;padding:11px 14px;overflow-x:auto;
+  white-space:pre;line-height:1.8;margin:10px 0}
+.formula i{color:var(--tx3);font-style:normal}
+.note{font-size:13px;color:var(--tx2);border-left:2px solid var(--bd2);padding:2px 0 2px 13px;margin:13px 0}
+.note b{color:var(--tx);font-weight:600}
+.warnbox{background:var(--crit-tint);border:1px solid var(--crit);border-radius:8px;padding:12px 15px;margin:14px 0}
+.warnbox .k{color:var(--crit)}
+.okbox{background:var(--ok-tint);border:1px solid var(--ok);border-radius:8px;padding:12px 15px;margin:14px 0}
+.okbox .k{color:var(--ok)}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pill{display:inline-block;font-family:var(--mono);font-size:10px;letter-spacing:.04em;padding:2px 7px;
+  border-radius:4px;background:var(--panel2);border:1px solid var(--bd);color:var(--tx2);vertical-align:1px}
+.pill.ok{background:var(--ok-tint);border-color:var(--ok);color:var(--ok)}
+.pill.bad{background:var(--crit-tint);border-color:var(--crit);color:var(--crit)}
+
+/* field table */
+table.f{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:12px}
+table.f th{text-align:left;font-weight:500;color:var(--tx3);font-size:10px;letter-spacing:.05em;
+  text-transform:uppercase;padding:6px 10px 6px 0;border-bottom:1px solid var(--bd);white-space:nowrap}
+table.f td{padding:5px 10px 5px 0;border-bottom:1px solid var(--bd);vertical-align:top}
+table.f tr:last-child td{border-bottom:none}
+table.f td.n{color:var(--tx3);white-space:nowrap}
+table.f td.v{word-break:break-all;color:var(--tx)}
+
+/* rounds */
+.rtable{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px;min-width:660px}
+.rtable th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:500;color:var(--tx3);
+  font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:7px 8px;border-bottom:1px solid var(--bd2);z-index:1}
+.rtable td{padding:3px 8px;border-bottom:1px solid var(--bd);color:var(--tx2);white-space:nowrap}
+.rtable tbody tr{cursor:pointer}
+.rtable tbody tr:hover{background:var(--acc-tint)}
+.rtable tbody tr[data-open="1"]{background:var(--acc-tint)}
+.rtable td.t{color:var(--tx3)}
+.rtable td.hi{color:var(--acc)}
+.rdetail td{background:var(--panel2);white-space:normal;padding:0}
+.rdetail .inner{padding:12px 14px;font-size:12px;line-height:1.85;white-space:pre-wrap;word-break:break-word}
+.rdetail .inner .lbl{color:var(--tx3)}
+.rdetail .inner .val{color:var(--acc)}
+.rwrap{max-height:430px;overflow:auto;border:1px solid var(--bd);border-radius:8px;background:var(--panel)}
+
+/* lane grid */
+.lanes{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;font-family:var(--mono);font-size:10.5px;min-width:520px}
+.lane{background:var(--panel2);border:1px solid var(--bd);border-radius:4px;padding:5px 6px;text-align:center;
+  transition:background .18s,border-color .18s}
+.lane .c{color:var(--tx3);font-size:9px;letter-spacing:.04em}
+.lane .h{color:var(--tx);letter-spacing:-.02em}
+.lane[data-chg="1"]{background:var(--acc-tint);border-color:var(--acc-line)}
+.lane[data-chg="1"] .h{color:var(--acc)}
+
+/* controls */
+.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+input[type=text],textarea,select{font-family:var(--mono);font-size:13px;background:var(--panel2);
+  color:var(--tx);border:1px solid var(--bd2);border-radius:7px;padding:9px 11px;width:100%}
+textarea{resize:vertical;min-height:70px;line-height:1.7;word-break:break-all}
+input[type=text]:focus,textarea:focus,select:focus{outline:2px solid var(--new);outline-offset:-1px;border-color:var(--new)}
+select{width:auto;cursor:pointer;padding:7px 10px;font-size:12px}
+.btn{appearance:none;border:1px solid var(--bd2);background:var(--panel);color:var(--tx2);cursor:pointer;
+  border-radius:6px;padding:7px 12px;font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;white-space:nowrap}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn:focus-visible{outline:2px solid var(--new);outline-offset:2px}
+.btn.on{background:var(--acc-tint);border-color:var(--acc-line);color:var(--acc)}
+label.fld{display:block;margin-bottom:6px}
+
+/* bit grid */
+.bits{display:grid;grid-template-columns:repeat(32,1fr);gap:1.5px;max-width:420px;min-width:260px}
+.bit{aspect-ratio:1;border-radius:1.5px;background:var(--bd);cursor:pointer}
+.bit[data-v="1"]{background:var(--tx2)}
+.bit.diff{background:var(--crit)!important}
+.bit.same{background:var(--bd)!important}
+.bit:focus-visible{outline:2px solid var(--new);outline-offset:1px}
+
+/* two-col */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+@media(max-width:700px){.cols{grid-template-columns:1fr}}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+@media(max-width:700px){.cols3{grid-template-columns:1fr}}
+
+/* randomx diagram */
+.rx{display:grid;gap:9px}
+.rxrow{display:grid;grid-template-columns:118px 1fr;gap:11px;align-items:stretch}
+@media(max-width:620px){.rxrow{grid-template-columns:1fr;gap:5px}}
+.rxlab{font-family:var(--mono);font-size:10px;color:var(--tx3);letter-spacing:.05em;text-transform:uppercase;
+  display:flex;align-items:center;justify-content:flex-end;text-align:right;padding-top:2px}
+@media(max-width:620px){.rxlab{justify-content:flex-start;text-align:left}}
+.rxbox{background:var(--panel2);border:1px solid var(--bd);border-radius:7px;padding:10px 13px}
+.rxbox .t{font-family:var(--cond);font-weight:600;font-size:13px;margin-bottom:2px}
+.rxbox .d{font-size:12px;color:var(--tx2);line-height:1.5}
+.rxbox.hot{border-color:var(--acc-line);background:var(--acc-tint)}
+.rxarrow{text-align:center;color:var(--tx3);font-family:var(--mono);font-size:13px;line-height:1}
+
+/* vectors */
+.vec{font-family:var(--mono);font-size:11.5px;display:grid;gap:5px}
+.vecrow{display:grid;grid-template-columns:20px 1fr;gap:9px;align-items:start}
+.vecrow .st{font-weight:600}
+.vecrow .st.p{color:var(--ok)} .vecrow .st.f{color:var(--crit)}
+.vecrow .d{min-width:0;word-break:break-all;color:var(--tx2)}
+.vecrow .d b{color:var(--tx);font-weight:500}
+
+hr.sep{border:none;border-top:1px solid var(--bd);margin:34px 0 0}
+.foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--bd);color:var(--tx3);font-size:12px;
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.foot a{color:var(--tx2)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="mast">
+  <h1>Hash Audit Bench</h1>
+  <p class="sub">Every arithmetic step of a cryptographic hash, computed live in your browser and laid out so you
+  can check it by hand. Nothing is pre-baked and no crypto library is loaded &mdash; SHA&#8209;256 and Keccak are
+  written out in this file.</p>
+  <div class="meta">
+    <span><b>Self-contained</b> &middot; works offline</span>
+    <span><b>No libraries</b> &middot; no crypto.subtle</span>
+    <span id="vecsum"><b>&hellip;</b> test vectors</span>
+  </div>
+</header>
+
+<div class="tabs" role="tablist" aria-label="Hash function">
+  <button class="tab" id="tab-btc" role="tab" aria-selected="true" aria-controls="pane-btc">
+    <span class="dot"></span>Bitcoin<span class="algo">SHA-256d</span></button>
+  <button class="tab" id="tab-xmr" role="tab" aria-selected="false" aria-controls="pane-xmr">
+    <span class="dot"></span>Monero<span class="algo">KECCAK-256 &middot; RANDOMX</span></button>
+</div>
+
+<!-- ================= BITCOIN ================= -->
+<section id="pane-btc" role="tabpanel" aria-labelledby="tab-btc">
+
+  <div class="stage">
+    <canvas id="cv-btc" width="1180" height="430" role="img"
+      aria-label="Animated pipeline: transactions leave the mempool, build a merkle tree, form an 80-byte block header, and are hashed against the difficulty target."></canvas>
+    <div class="transport">
+      <button class="tbtn" id="pp-btc" aria-label="Pause animation">
+        <svg id="ppi-btc" viewBox="0 0 12 12"><rect x="2" y="1.5" width="3" height="9" rx="1"/><rect x="7" y="1.5" width="3" height="9" rx="1"/></svg>
+      </button>
+      <input type="range" class="scrub" id="sc-btc" min="0" max="1000" value="0" aria-label="Scrub pipeline stage">
+      <div class="phase" id="ph-btc"><b>Mempool</b></div>
+    </div>
+    <div class="chips" id="chips-btc"></div>
+  </div>
+
+  <div class="steps">
+
+    <div class="step"><div class="snum">00</div><div class="sbody">
+      <h2>Where the constants come from</h2>
+      <p class="lede">SHA&#8209;256 starts from 72 fixed 32&#8209;bit numbers. They are not arbitrary and they are not
+      secret &mdash; they are derived from the square and cube roots of the small primes, precisely so that nobody can
+      claim a hidden trapdoor was baked in. This is called a <em>nothing&#8209;up&#8209;my&#8209;sleeve</em> construction.</p>
+
+      <div class="formula">H<i>[i]</i> = floor( frac( sqrt(p<i>[i]</i>) ) &times; 2^32 )   <i>for the first 8 primes  2,3,5,7,11,13,17,19</i>
+K<i>[t]</i> = floor( frac( cbrt(p<i>[t]</i>) ) &times; 2^32 )   <i>for the first 64 primes 2 &hellip; 311</i>
+
+<i>frac(x) = x - floor(x)   &mdash; keep only what is after the decimal point</i></div>
+
+      <div class="card">
+        <div class="k" style="margin-bottom:9px">Derivation, recomputed in this page from the primes</div>
+        <div class="scrollx"><table class="f" id="derive-h"></table></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn" id="showk">Show all 64 K constants &amp; their derivation</button>
+        </div>
+        <div id="kwrap" hidden style="margin-top:12px"><div class="scrollx"><table class="f" id="derive-k"></table></div></div>
+      </div>
+      <p class="note">If any of these numbers were chosen freely, the designer could have searched for a value that
+      creates a weakness only they know about. Deriving them from &radic;2, &radic;3, &radic;5&hellip; removes that
+      freedom: there is essentially nothing to choose.</p>
+    </div></div>
+
+    <div class="step"><div class="snum">01</div><div class="sbody">
+      <h2>Your input</h2>
+      <p class="lede">Everything below recomputes from this box. Type anything and watch all 64 rounds change.</p>
+      <div class="card">
+        <label class="fld k" for="in-btc">Message</label>
+        <textarea id="in-btc" spellcheck="false">abc</textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn on" id="m-txt-btc">Text (UTF&#8209;8)</button>
+          <button class="btn" id="m-hex-btc">Hex bytes</button>
+          <span style="flex:1"></span>
+          <button class="btn" data-pre="abc">&quot;abc&quot;</button>
+          <button class="btn" data-pre="">empty</button>
+          <button class="btn" id="pre-hdr">block 125552 header</button>
+        </div>
+        <div class="row" style="margin-top:11px;font-family:var(--mono);font-size:11.5px;color:var(--tx3)">
+          <span id="len-btc"></span>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="snum">02</div><div class="sbody">
+      <h2>Pad the message to a multiple of 512 bits</h2>
+      <p class="lede">SHA&#8209;256 only eats 512&#8209;bit (64&#8209;byte) blocks, so the message is extended. Append a
+      single <code class="mono">1</code> bit, then as many <code class="mono">0</code> bits as needed, then the original
+      length as a 64&#8209;bit big&#8209;endian integer. The length is appended so that two different messages can never
+      pad to the same thing.</p>
+      <div class="formula">L = message length in bits
+k = smallest k &ge; 0 such that  (L + 1 + k + 64) mod 512 = 0
+padded = message &#8741; 0x80 &#8741; 0x00 &times; (k-7)/8 &#8741; uint64_be(L)</div>
+      <div class="card">
+        <div class="k" style="margin-bottom:8px">Padded message <span id="padinfo-btc" style="text-transform:none;letter-spacing:0"></span></div>
+        <div class="hex" id="pad-btc"></div>
+        <div style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--tx3)">
+          <span style="color:var(--tx)">&#9632;</span> message &nbsp;
+          <span style="color:var(--acc)">&#9632;</span> 0x80 terminator &nbsp;
+          <span style="color:var(--tx3)">&#9632;</span> zero fill &nbsp;
+          <span style="color:var(--new)">&#9632;</span> 64-bit length
+        </div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="snum">03</div><div class="sbody">
+      <h2>Expand each block into a 64&#8209;word message schedule</h2>
+      <p class="lede">The 64&#8209;byte block is read as sixteen 32&#8209;bit words <code class="mono">W[0..15]</code>.
+      The remaining 48 words are generated from them, so that every input bit gets stirred into many rounds rather
+      than touching just one.</p>
+      <div class="formula">&sigma;0(x) = ROTR&#8311;(x) &oplus; ROTR&#185;&#8312;(x) &oplus; SHR&#179;(x)
+&sigma;1(x) = ROTR&#185;&#8311;(x) &oplus; ROTR&#185;&#8313;(x) &oplus; SHR&#185;&#8304;(x)
+
+W[t] = W[t-16] + &sigma;0(W[t-15]) + W[t-7] + &sigma;1(W[t-2])   <i>mod 2&#179;&#178;   for t = 16 &hellip; 63</i>
+
+<i>ROTR&#8319; rotates bits right (they wrap around); SHR&#8319; shifts right (they fall off).</i></div>
+      <div class="row" style="margin-bottom:10px">
+        <label class="k" for="blk-btc" style="margin:0">Block</label>
+        <select id="blk-btc"></select>
+        <label class="k" for="pass-btc" style="margin:0 0 0 8px">Pass</label>
+        <select id="pass-btc"><option value="0">1 &mdash; SHA-256(message)</option><option value="1">2 &mdash; SHA-256(that digest)</option></select>
+      </div>
+      <div class="rwrap" style="max-height:330px"><div class="scrollx"><table class="rtable" id="sched-btc"></table></div></div>
+    </div></div>
+
+    <div class="step"><div class="snum">04</div><div class="sbody">
+      <h2>Run 64 rounds of compression</h2>
+      <p class="lede">Eight working variables <code class="mono">a&hellip;h</code> start from the current hash value.
+      Each round mixes in one schedule word and one constant, then shifts everything down by one position. Click any
+      row to expand the full arithmetic for that round.</p>
+      <div class="formula">&Sigma;0(a) = ROTR&#178;(a) &oplus; ROTR&#185;&#179;(a) &oplus; ROTR&#178;&#178;(a)
+&Sigma;1(e) = ROTR&#8310;(e) &oplus; ROTR&#185;&#185;(e) &oplus; ROTR&#178;&#8309;(e)
+Ch(e,f,g)  = (e &and; f) &oplus; (&not;e &and; g)        <i>e chooses: f where e is 1, g where e is 0</i>
+Maj(a,b,c) = (a&and;b) &oplus; (a&and;c) &oplus; (b&and;c)    <i>majority vote, bit by bit</i>
+
+T1 = h + &Sigma;1(e) + Ch(e,f,g) + K[t] + W[t]     <i>mod 2&#179;&#178;</i>
+T2 = &Sigma;0(a) + Maj(a,b,c)                      <i>mod 2&#179;&#178;</i>
+
+h=g  g=f  f=e  e=d+T1  d=c  c=b  b=a  a=T1+T2   <i>mod 2&#179;&#178;</i></div>
+      <div class="rwrap"><div class="scrollx"><table class="rtable" id="rounds-btc"></table></div></div>
+      <p class="note"><b>Why it is hard to reverse.</b> Every round throws information away &mdash; the additions are
+      mod&nbsp;2&#179;&#178;, so carries fall off the end and are gone. Running the rounds backwards would need those
+      lost bits. Forwards is cheap; backwards is a search.</p>
+    </div></div>
+
+    <div class="step"><div class="snum">05</div><div class="sbody">
+      <h2>Add the working variables back into the hash value</h2>
+      <p class="lede">This final addition is what makes the compression function one&#8209;way rather than a reversible
+      permutation. It is called the Davies&ndash;Meyer feed&#8209;forward.</p>
+      <div class="formula">H[i] = H[i] + working[i]   <i>mod 2&#179;&#178;, for i = 0 &hellip; 7</i></div>
+      <div class="card"><div class="scrollx"><table class="f" id="feed-btc"></table></div></div>
+    </div></div>
+
+    <div class="step"><div class="snum">06</div><div class="sbody">
+      <h2>Bitcoin hashes twice</h2>
+      <p class="lede">Bitcoin never uses a bare SHA&#8209;256. Everything &mdash; block headers, transaction ids, merkle
+      nodes &mdash; is <code class="mono">SHA256(SHA256(x))</code>. The second pass takes the 32&#8209;byte digest as its
+      input, pads it to one 64&#8209;byte block, and compresses again.</p>
+      <div class="formula">SHA256d(x) = SHA256( SHA256(x) )</div>
+      <div class="card">
+        <table class="f"><tbody>
+          <tr><td class="n">pass 1</td><td class="v" id="d1-btc"></td></tr>
+          <tr><td class="n">pass 2</td><td class="v" id="d2-btc" style="color:var(--acc)"></td></tr>
+        </tbody></table>
+      </div>
+      <p class="note"><b>The stated reason</b> is defence against length&#8209;extension. SHA&#8209;256 is a
+      Merkle&ndash;Damg&aring;rd construction: its output <em>is</em> its internal state, so given
+      <code class="mono">H(secret &#8741; msg)</code> you can keep hashing from there and produce
+      <code class="mono">H(secret &#8741; msg &#8741; pad &#8741; extra)</code> without knowing the secret. Hashing the
+      digest a second time hides that state. Keccak, on the Monero tab, is immune by construction &mdash; it keeps 512
+      bits of its state permanently hidden.</p>
+    </div></div>
+
+    <div class="step"><div class="snum">07</div><div class="sbody">
+      <h2>Byte order &mdash; why the displayed hash looks backwards</h2>
+      <p class="lede">Bitcoin serialises hashes little&#8209;endian internally but block explorers print them
+      big&#8209;endian. Same 32 bytes, printed in the opposite order. This trips up nearly everyone once.</p>
+      <div class="card">
+        <table class="f"><tbody>
+          <tr><td class="n">internal (LE)</td><td class="v" id="le-btc"></td></tr>
+          <tr><td class="n">displayed (BE)</td><td class="v" id="be-btc" style="color:var(--acc)"></td></tr>
+        </tbody></table>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="snum">08</div><div class="sbody">
+      <h2>The avalanche property</h2>
+      <p class="lede">Flip one bit of the input and roughly half the output bits should change &mdash; around 128 of
+      256. This is not a security guarantee on its own; it is the visible symptom of a hash that behaves like a random
+      function. Click any input bit to flip it.</p>
+      <div class="cols">
+        <div class="card">
+          <div class="k" style="margin-bottom:9px">Input, first 256 bits &mdash; click to flip</div>
+          <div class="scrollx"><div class="bits" id="avin"></div></div>
+          <div style="margin-top:10px;font-family:var(--mono);font-size:11.5px;color:var(--tx3)" id="avinfo"></div>
+        </div>
+        <div class="card">
+          <div class="k" style="margin-bottom:9px">Digest bits that changed</div>
+          <div class="scrollx"><div class="bits" id="avout"></div></div>
+          <div style="margin-top:10px;font-family:var(--mono);font-size:11.5px" id="avstat"></div>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="snum">09</div><div class="sbody">
+      <h2>Block 125552, verified end to end</h2>
+      <p class="lede">A real Bitcoin block from 21 May 2011 &mdash; the canonical worked example. Every value below is
+      recomputed by this page from the 80 header bytes. Check the result against any block explorer.</p>
+      <div class="card">
+        <div class="k" style="margin-bottom:9px">80-byte header, field by field</div>
+        <div class="scrollx"><table class="f" id="hdr-btc"></table></div>
+      </div>
+      <div class="card">
+        <div class="k" style="margin-bottom:9px">Proof of work check</div>
+        <div class="scrollx"><table class="f" id="pow-btc"></table></div>
+      </div>
+      <div class="formula">bits 0x1a44b9f2  &rarr;  exponent 0x1a = 26,  mantissa 0x44b9f2
+
+target = mantissa &times; 256^(exponent - 3)
+       = 0x44b9f2 &times; 256&#178;&#179;
+
+valid block  &hArr;  hash interpreted as a 256-bit big-endian integer  &lt;  target</div>
+      <div id="powverdict"></div>
+      <p class="note"><b>The nonce is the only thing a miner is really free to change</b>, and it is only 32 bits &mdash;
+      about 4.3 billion tries, which modern hardware exhausts in well under a second. So miners also roll the timestamp
+      and rebuild the coinbase transaction to get a fresh merkle root, which gives an effectively unlimited search
+      space. Mining is not clever: it is this exact computation, repeated.</p>
+    </div></div>
+
+    <div class="step"><div class="snum">10</div><div class="sbody">
+      <h2>Self-test</h2>
+      <p class="lede">The SHA&#8209;256 written in this file, checked against published NIST vectors and the real block
+      hash. If any line is red, do not trust anything above it.</p>
+      <div class="card"><div class="vec" id="vec-btc"></div></div>
+    </div></div>
+
+  </div>
+  <hr class="sep">
+</section>
+<!-- ================= MONERO ================= -->
+<section id="pane-xmr" role="tabpanel" aria-labelledby="tab-xmr" hidden>
+
+  <div class="stage">
+    <canvas id="cv-xmr" width="1180" height="430" role="img"
+      aria-label="Animated pipeline: a Monero transaction with ring signature decoys enters a block, the block is absorbed into the Keccak sponge state, and RandomX proof of work runs."></canvas>
+    <div class="transport">
+      <button class="tbtn" id="pp-xmr" aria-label="Pause animation">
+        <svg id="ppi-xmr" viewBox="0 0 12 12"><rect x="2" y="1.5" width="3" height="9" rx="1"/><rect x="7" y="1.5" width="3" height="9" rx="1"/></svg>
+      </button>
+      <input type="range" class="scrub" id="sc-xmr" min="0" max="1000" value="0" aria-label="Scrub pipeline stage">
+      <div class="phase" id="ph-xmr"><b>Tx pool</b></div>
+    </div>
+    <div class="chips" id="chips-xmr"></div>
+  </div>
+
+  <div class="steps">
+
+    <div class="step"><div class="snum">00</div><div class="sbody">
+      <h2>Two different hashes, two different jobs</h2>
+      <p class="lede">Monero uses two unrelated functions and they are constantly confused for each other. Only one of
+      them is a hash in the sense of the Bitcoin tab.</p>
+      <div class="cols">
+        <div class="card" style="border-color:var(--acc-line)">
+          <div class="k" style="color:var(--acc);margin-bottom:6px">Keccak-256 &mdash; identity</div>
+          <p style="margin:0 0 9px;font-size:13px;color:var(--tx2)">Transaction hashes, block hashes, key derivation,
+          the <code class="mono">cn_fast_hash</code> used all over the codebase. A normal cryptographic hash.
+          <b style="color:var(--tx)">Fully computed on this page.</b></p>
+          <div class="pill ok">auditable here</div>
+        </div>
+        <div class="card">
+          <div class="k" style="margin-bottom:6px">RandomX &mdash; proof of work</div>
+          <p style="margin:0 0 9px;font-size:13px;color:var(--tx2)">Since Nov 2019. Not a hash function at all: it is a
+          virtual machine that compiles random programs and runs them against a 2&nbsp;GB dataset, specifically so that
+          a CPU beats an ASIC.</p>
+          <div class="pill">diagrammed, not computed &mdash; step 06</div>
+        </div>
+      </div>
+      <p class="note">Keccak won the SHA&#8209;3 competition in 2012, but Monero (and Ethereum) shipped the
+      <em>original</em> Keccak before NIST changed the padding byte for the final standard. So Monero's
+      &ldquo;Keccak&#8209;256&rdquo; and NIST&nbsp;&ldquo;SHA3&#8209;256&rdquo; give different digests for the same
+      input. One byte of difference, shown in step&nbsp;02.</p>
+    </div></div>
+
+    <div class="step"><div class="snum">01</div><div class="sbody">
+      <h2>The sponge, and your input</h2>
+      <p class="lede">Keccak is not built like SHA&#8209;256. There is no message schedule and no feed&#8209;forward.
+      There is a single 1600&#8209;bit state, and you <em>absorb</em> the message into part of it and then
+      <em>squeeze</em> the digest back out.</p>
+      <div class="formula">state  b = 1600 bits, viewed as a 5 &times; 5 grid of 64-bit lanes  A[x][y]
+rate   r = 1088 bits (136 bytes)   <i>&larr; the part the message touches</i>
+cap    c =  512 bits ( 64 bytes)   <i>&larr; never touched, never output</i>
+                                    <i>b = r + c</i>
+output 256 bits, taken from the first 4 lanes after the last permutation</div>
+      <p class="note"><b>The capacity is the whole security argument.</b> Those 512 bits are never written by the
+      message and never read out. An attacker cannot see them or set them, which is exactly why Keccak has no
+      length&#8209;extension weakness &mdash; there is no way to resume the state from a digest.</p>
+      <div class="card">
+        <label class="fld k" for="in-xmr">Message</label>
+        <textarea id="in-xmr" spellcheck="false">abc</textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="btn on" id="m-txt-xmr">Text (UTF&#8209;8)</button>
+          <button class="btn" id="m-hex-xmr">Hex bytes</button>
+          <span style="flex:1"></span>
+          <button class="btn" data-prex="abc">&quot;abc&quot;</button>
+          <button class="btn" data-prex="">empty</button>
+        </div>
+        <div class="row" style="margin-top:11px">
+          <button class="btn on" id="pad01">Keccak pad 0x01 &mdash; Monero</button>
+          <button class="btn" id="pad06">SHA-3 pad 0x06 &mdash; NIST</button>
+        </div>
+        <div class="row" style="margin-top:11px;font-family:var(--mono);font-size:11.5px;color:var(--tx3)">
+          <span id="len-xmr"></span>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="snum">02</div><div class="sbody">
+      <h2>Pad to a multiple of the rate</h2>
+      <p class="lede">Keccak pads with a rule called <code class="mono">pad10*1</code>: a start byte, zeros, and a
+      final <code class="mono">0x80</code> (the high bit) on the last byte of the block. Unlike SHA&#8209;256 the
+      message length is <em>not</em> appended &mdash; the padding rule alone makes it unambiguous.</p>
+      <div class="formula">padlen = 136 - (len mod 136)          <i>always at least 1, never 0</i>
+padded = message &#8741; D &#8741; 0x00 &times; (padlen-2) &#8741; 0x80
+
+D = 0x01   <i>original Keccak  &mdash; Monero, Ethereum</i>
+D = 0x06   <i>NIST SHA-3       &mdash; adds the domain-separation bits 01</i>
+
+<i>when padlen = 1 the two collapse into one byte: D | 0x80</i></div>
+      <div class="card">
+        <div class="k" style="margin-bottom:8px">Padded message <span id="padinfo-xmr" style="text-transform:none;letter-spacing:0"></span></div>
+        <div class="hex" id="pad-xmr"></div>
+        <div style="margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--tx3)">
+          <span style="color:var(--tx)">&#9632;</span> message &nbsp;
+          <span style="color:var(--acc)">&#9632;</span> domain byte &nbsp;
+          <span style="color:var(--tx3)">&#9632;</span> zero fill &nbsp;
+          <span style="color:var(--new)">&#9632;</span> 0x80 terminator
+        </div>
+      </div>
+      <div id="padcmp"></div>
+    </div></div>
+
+    <div class="step"><div class="snum">03</div><div class="sbody">
+      <h2>Absorb &mdash; XOR the block into the state</h2>
+      <p class="lede">Each 136&#8209;byte block is read as 17 little&#8209;endian 64&#8209;bit lanes and XORed into the
+      first 17 cells of the 5&times;5 grid. The last 8 cells &mdash; the capacity &mdash; are left alone.</p>
+      <div class="formula">A[i mod 5][i div 5] &oplus;= uint64_le( block[8i &hellip; 8i+7] )   <i>for i = 0 &hellip; 16</i>
+
+<i>lane index runs down columns: i = x + 5y</i></div>
+      <div class="card">
+        <div class="k" style="margin-bottom:10px">State after absorb, before permutation &mdash; 25 lanes of 64 bits</div>
+        <div class="scrollx"><div class="lanes" id="absorb-xmr"></div></div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="snum">04</div><div class="sbody">
+      <h2>Permute &mdash; 24 rounds of &theta; &rho; &pi; &chi; &iota;</h2>
+      <p class="lede">Five steps, each doing one job. Together they scramble all 1600 bits. Drag the round slider and
+      watch the lanes change.</p>
+
+      <div class="formula"><span style="color:var(--acc)">&theta;</span>  C[x]    = A[x][0] &oplus; A[x][1] &oplus; A[x][2] &oplus; A[x][3] &oplus; A[x][4]
+   D[x]    = C[x-1] &oplus; ROTL&#185;( C[x+1] )
+   A[x][y] &oplus;= D[x]
+   <i>diffusion &mdash; every lane now depends on two whole neighbouring columns</i>
+
+<span style="color:var(--acc)">&rho;</span>  A[x][y] = ROTL^r[x][y]( A[x][y] )
+   <i>rotate each lane by a fixed offset, so bits move along the 64-bit axis</i>
+
+<span style="color:var(--acc)">&pi;</span>  B[y][2x+3y mod 5] = A[x][y]
+   <i>permute lane positions &mdash; breaks up the column structure &theta; just created</i>
+
+<span style="color:var(--acc)">&chi;</span>  A[x][y] = B[x][y] &oplus; ( &not;B[x+1][y] &and; B[x+2][y] )
+   <i>the only non-linear step. Without it the whole permutation would be solvable linear algebra.</i>
+
+<span style="color:var(--acc)">&iota;</span>  A[0][0] &oplus;= RC[round]
+   <i>break the symmetry, so all-zero and all-one states do not stay symmetric</i></div>
+
+      <div class="row" style="margin-bottom:11px">
+        <label class="k" for="rnd-xmr" style="margin:0">Round</label>
+        <input type="range" id="rnd-xmr" class="scrub" min="0" max="23" value="0" style="max-width:260px;flex:0 1 260px">
+        <span class="mono" id="rndlab" style="font-size:12px;color:var(--acc);min-width:150px"></span>
+        <span style="flex:1"></span>
+        <label class="k" for="stepsel" style="margin:0">After</label>
+        <select id="stepsel">
+          <option value="afterTheta">&theta; theta</option>
+          <option value="afterPi">&rho; &pi; rho + pi</option>
+          <option value="afterChi">&chi; chi</option>
+          <option value="after" selected>&iota; iota &mdash; full round</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="scrollx"><div class="lanes" id="perm-xmr"></div></div>
+        <div style="margin-top:11px;font-family:var(--mono);font-size:11px;color:var(--tx3)">
+          Highlighted lanes changed from the previous displayed state. <span id="chgcount"></span>
+        </div>
+      </div>
+
+      <h3>Rotation offsets used by &rho;</h3>
+      <div class="card"><div class="scrollx"><div class="lanes" id="rho-xmr"></div></div></div>
+
+      <h3>Round constants used by &iota;</h3>
+      <p style="font-size:13px;color:var(--tx2);margin:0 0 10px">Another nothing&#8209;up&#8209;my&#8209;sleeve set:
+      each is the output of a tiny 8&#8209;bit linear feedback shift register, placed only on bit positions
+      2&#8319;&#8209;1.</p>
+      <div class="card"><div class="scrollx"><table class="f" id="rc-xmr"></table></div></div>
+    </div></div>
+
+    <div class="step"><div class="snum">05</div><div class="sbody">
+      <h2>Squeeze out the digest</h2>
+      <p class="lede">After the last permutation, read the first 256 bits of the state as little&#8209;endian bytes.
+      For a 256&#8209;bit output that is just the first four lanes &mdash; no second permutation needed, because 256 is
+      well under the 1088&#8209;bit rate.</p>
+      <div class="card">
+        <div class="scrollx"><table class="f" id="squeeze-xmr"></table></div>
+      </div>
+      <div class="card">
+        <table class="f"><tbody>
+          <tr><td class="n">digest</td><td class="v" id="dig-xmr" style="color:var(--acc)"></td></tr>
+        </tbody></table>
+      </div>
+      <p class="note">Monero calls this <code class="mono">cn_fast_hash</code>. A transaction id is this function
+      applied to the transaction's serialised prefix; a block id is this function applied to the block header
+      (with the tree root and tx count), not to the RandomX result.</p>
+    </div></div>
+
+    <div class="step"><div class="snum">06</div><div class="sbody">
+      <h2>RandomX &mdash; why the proof of work is not computable here</h2>
+      <p class="lede">RandomX is a full virtual machine. Hashing one candidate block means generating a random program
+      from the block, allocating gigabytes, and executing millions of instructions. A browser page can honestly
+      diagram it; it cannot honestly run it, and anything that claimed to would be faking.</p>
+
+      <div class="card">
+        <div class="rx">
+          <div class="rxrow"><div class="rxlab">seed</div><div class="rxbox">
+            <div class="t">Block header + nonce</div>
+            <div class="d">Blake2b hashes it down to a 256-bit seed. Change the nonce, get a completely different program.</div></div></div>
+          <div class="rxarrow">&darr;</div>
+          <div class="rxrow"><div class="rxlab">expand</div><div class="rxbox">
+            <div class="t">Cache &rarr; Dataset &nbsp;<span class="pill">256 MB &rarr; 2080 MB</span></div>
+            <div class="d">Argon2d builds a 256&nbsp;MB cache, then SuperscalarHash expands it to a 2&nbsp;GB dataset.
+            Full nodes keep the cache and verify slowly; miners hold the whole dataset in RAM.</div></div></div>
+          <div class="rxarrow">&darr;</div>
+          <div class="rxrow"><div class="rxlab">compile</div><div class="rxbox hot">
+            <div class="t">Generate a random program &nbsp;<span class="pill">256 instructions</span></div>
+            <div class="d">Integer, floating-point and branch instructions over 8 integer registers, 4 FP registers and
+            a 2&nbsp;MB scratchpad &mdash; deliberately shaped like real CPU code so a general-purpose CPU has no
+            handicap.</div></div></div>
+          <div class="rxarrow">&darr;</div>
+          <div class="rxrow"><div class="rxlab">execute</div><div class="rxbox hot">
+            <div class="t">Run it &nbsp;<span class="pill">8 programs &times; 2048 iterations</span></div>
+            <div class="d">Each program's result seeds the next. Roughly 16 million instructions and constant random
+            reads against the 2&nbsp;GB dataset per single hash.</div></div></div>
+          <div class="rxarrow">&darr;</div>
+          <div class="rxrow"><div class="rxlab">finalise</div><div class="rxbox">
+            <div class="t">Blake2b of the final register file</div>
+            <div class="d">Produces the 256-bit result that gets compared against the difficulty target &mdash; the same
+            comparison as the Bitcoin tab.</div></div></div>
+        </div>
+      </div>
+
+      <div class="warnbox">
+        <div class="k" style="margin-bottom:6px">Why the design is this hostile</div>
+        <p style="margin:0;font-size:13px;color:var(--tx2)">An ASIC wins when the work is a small fixed circuit run
+        billions of times &mdash; which is exactly what SHA&#8209;256 is. RandomX makes the work a <em>different
+        program every time</em>, needing branch prediction, out-of-order execution, floating point and 2&nbsp;GB of
+        fast RAM. Building a chip for that gets you approximately a CPU. Monero has also hard-forked its proof of work
+        several times specifically to destroy any ASIC that did appear.</p>
+      </div>
+
+      <div class="cols3" style="margin-top:14px">
+        <div class="flat"><div class="k">Bitcoin</div><div style="font-size:13px;color:var(--tx2);margin-top:4px">
+          2 SHA-256 blocks per try. Kilobytes of state. Perfect ASIC target.</div></div>
+        <div class="flat"><div class="k">Monero</div><div style="font-size:13px;color:var(--tx2);margin-top:4px">
+          ~16M instructions + 2 GB RAM per try. Hostile ASIC target.</div></div>
+        <div class="flat"><div class="k">Both</div><div style="font-size:13px;color:var(--tx2);margin-top:4px">
+          Same final test: is the result, as a big integer, below the target?</div></div>
+      </div>
+    </div></div>
+
+    <div class="step"><div class="snum">07</div><div class="sbody">
+      <h2>Self-test</h2>
+      <p class="lede">The Keccak written in this file, checked against published vectors for both padding variants.</p>
+      <div class="card"><div class="vec" id="vec-xmr"></div></div>
+    </div></div>
+
+  </div>
+  <hr class="sep">
+</section>
+
+<div class="foot">
+  <span>Computed in-page. No network calls, no crypto library, no pre-baked digests.</span>
+  <span class="mono">SHA-256 &middot; FIPS 180-4 &nbsp;|&nbsp; Keccak &middot; FIPS 202</span>
+</div>
+
+</div>
+<script>
+"use strict";
+/* ============================================================
+   SHA-256 — FIPS 180-4, written out longhand and fully traced.
+   ============================================================ */
+const K256=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+const H256=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+const rotr=(x,n)=>((x>>>n)|(x<<(32-n)))>>>0;
+const shr=(x,n)=>x>>>n;
+const add32=(...a)=>a.reduce((s,v)=>(s+v)>>>0,0);
+const Ch=(e,f,g)=>((e&f)^((~e)&g))>>>0;
+const Maj=(a,b,c)=>((a&b)^(a&c)^(b&c))>>>0;
+const BS0=a=>(rotr(a,2)^rotr(a,13)^rotr(a,22))>>>0;
+const BS1=e=>(rotr(e,6)^rotr(e,11)^rotr(e,25))>>>0;
+const ss0=x=>(rotr(x,7)^rotr(x,18)^shr(x,3))>>>0;
+const ss1=x=>(rotr(x,17)^rotr(x,19)^shr(x,10))>>>0;
+
+function padSHA(bytes){
+  const l=bytes.length,bitLen=l*8;
+  const k=(56-(l+1)%64+64)%64;
+  const out=new Uint8Array(l+1+k+8);
+  out.set(bytes,0); out[l]=0x80;
+  const dv=new DataView(out.buffer);
+  dv.setUint32(out.length-8,Math.floor(bitLen/4294967296));
+  dv.setUint32(out.length-4,bitLen>>>0);
+  return out;
+}
+function sha256Trace(bytes){
+  const padded=padSHA(bytes), dv=new DataView(padded.buffer);
+  let H=H256.slice(); const blocks=[];
+  for(let b=0;b<padded.length/64;b++){
+    const W=new Array(64);
+    for(let t=0;t<16;t++) W[t]=dv.getUint32(b*64+t*4);
+    const exp=[];
+    for(let t=16;t<64;t++){
+      const s0=ss0(W[t-15]),s1=ss1(W[t-2]);
+      W[t]=add32(s1,W[t-7],s0,W[t-16]);
+      exp.push({t,s0,s1,w15:W[t-15],w2:W[t-2],w7:W[t-7],w16:W[t-16],W:W[t]});
+    }
+    let [a,bb,c,d,e,f,g,h]=H; const Hin=H.slice(); const rounds=[];
+    for(let t=0;t<64;t++){
+      const S1=BS1(e),ch=Ch(e,f,g),T1=add32(h,S1,ch,K256[t],W[t]);
+      const S0=BS0(a),mj=Maj(a,bb,c),T2=add32(S0,mj);
+      rounds.push({t,a,b:bb,c,d,e,f,g,h,S1,ch,K:K256[t],W:W[t],T1,S0,maj:mj,T2,
+                   na:add32(T1,T2),ne:add32(d,T1)});
+      h=g;g=f;f=e;e=add32(d,T1);d=c;c=bb;bb=a;a=add32(T1,T2);
+    }
+    const work=[a,bb,c,d,e,f,g,h];
+    H=H.map((v,i)=>add32(v,work[i]));
+    blocks.push({index:b,W,exp,rounds,Hin,work,Hout:H.slice()});
+  }
+  const out=new Uint8Array(32),odv=new DataView(out.buffer);
+  H.forEach((v,i)=>odv.setUint32(i*4,v));
+  return {digest:out,H,blocks,padded};
+}
+const sha256=b=>sha256Trace(b).digest;
+const sha256d=b=>sha256(sha256(b));
+
+/* ============================================================
+   Keccak-f[1600] / Keccak-256, traced. BigInt lanes for clarity.
+   ============================================================ */
+const RC=[0x0000000000000001n,0x0000000000008082n,0x800000000000808An,0x8000000080008000n,
+0x000000000000808Bn,0x0000000080000001n,0x8000000080008081n,0x8000000000008009n,
+0x000000000000008An,0x0000000000000088n,0x0000000080008009n,0x000000008000000An,
+0x000000008000808Bn,0x800000000000008Bn,0x8000000000008089n,0x8000000000008003n,
+0x8000000000008002n,0x8000000000000080n,0x000000000000800An,0x800000008000000An,
+0x8000000080008081n,0x8000000000008080n,0x0000000080000001n,0x8000000080008008n];
+const ROT=[[0,36,3,41,18],[1,44,10,45,2],[62,6,43,15,61],[28,55,25,21,56],[27,20,39,8,14]];
+const M64=(1n<<64n)-1n;
+const rol=(x,n)=>{const s=BigInt(n)%64n;return s===0n?x:(((x<<s)|(x>>(64n-s)))&M64);};
+function keccakF(A,trace){
+  for(let r=0;r<24;r++){
+    const C=[],D=[];
+    for(let x=0;x<5;x++) C[x]=A[x][0]^A[x][1]^A[x][2]^A[x][3]^A[x][4];
+    for(let x=0;x<5;x++) D[x]=C[(x+4)%5]^rol(C[(x+1)%5],1);
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++) A[x][y]^=D[x];
+    const afterTheta=A.map(c=>c.slice());
+    const B=[[],[],[],[],[]];
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++) B[y][(2*x+3*y)%5]=rol(A[x][y],ROT[x][y]);
+    const afterPi=B.map(c=>c.slice());
+    for(let x=0;x<5;x++) for(let y=0;y<5;y++) A[x][y]=B[x][y]^(((~B[(x+1)%5][y])&M64)&B[(x+2)%5][y]);
+    const afterChi=A.map(c=>c.slice());
+    A[0][0]^=RC[r];
+    if(trace) trace.push({r,C,D,afterTheta,afterPi,afterChi,after:A.map(c=>c.slice()),rc:RC[r]});
+  }
+  return A;
+}
+function keccak256(bytes,padByte,trace){
+  padByte=padByte===undefined?0x01:padByte;
+  const rate=136,len=bytes.length;
+  const padLen=rate-(len%rate);
+  const buf=new Uint8Array(len+padLen);
+  buf.set(bytes,0); buf[len]^=padByte; buf[buf.length-1]|=0x80;
+  let A=Array.from({length:5},()=>Array(5).fill(0n));
+  const absorbs=[];
+  for(let off=0;off<buf.length;off+=rate){
+    const before=A.map(c=>c.slice());
+    for(let i=0;i<17;i++){
+      let lane=0n;
+      for(let j=7;j>=0;j--) lane=(lane<<8n)|BigInt(buf[off+i*8+j]);
+      A[i%5][Math.floor(i/5)]^=lane;
+    }
+    const absorbed=A.map(c=>c.slice());
+    const t=trace?[]:null;
+    A=keccakF(A,t);
+    absorbs.push({offset:off,before,absorbed,rounds:t,state:A.map(c=>c.slice())});
+  }
+  const out=new Uint8Array(32);
+  for(let i=0;i<4;i++){
+    const lane=A[i%5][Math.floor(i/5)];
+    for(let j=0;j<8;j++) out[i*8+j]=Number((lane>>BigInt(8*j))&0xffn);
+  }
+  return {digest:out,absorbs,padded:buf,state:A};
+}
+
+/* ---------------- helpers ---------------- */
+const $=s=>document.querySelector(s);
+const hx=b=>Array.from(b).map(x=>x.toString(16).padStart(2,"0")).join("");
+const h8=v=>(v>>>0).toString(16).padStart(8,"0");
+const h16=v=>v.toString(16).padStart(16,"0");
+const b32=v=>(v>>>0).toString(2).padStart(32,"0");
+const enc=s=>new TextEncoder().encode(s);
+const revHex=h=>h.match(/.{2}/g).reverse().join("");
+const esc=s=>s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function parseHex(s){
+  const c=s.replace(/[^0-9a-fA-F]/g,"");
+  const even=c.length%2?c.slice(0,-1):c;
+  return new Uint8Array((even.match(/.{2}/g)||[]).map(x=>parseInt(x,16)));
+}
+const fromHex=parseHex;
+function el(tag,cls,html){const n=document.createElement(tag);if(cls)n.className=cls;if(html!=null)n.innerHTML=html;return n;}
+
+/* ---------------- nothing-up-my-sleeve derivation ---------------- */
+function primes(n){const out=[];for(let i=2;out.length<n;i++){let p=true;for(let j=2;j*j<=i;j++)if(i%j===0){p=false;break}if(p)out.push(i)}return out;}
+function fracRoot(p,root){
+  // exact frac(p^(1/root)) x 2^32, by integer nth-root of  p << (32*root)
+  const n=BigInt(root);
+  const target=BigInt(p)<<BigInt(32*root);        // = p * 2^(32*root)
+  let hi=1n<<(BigInt(target.toString(2).length)/n+2n), lo=1n;
+  while(lo<hi){                                    // floor( p^(1/root) * 2^32 )
+    const mid=(lo+hi+1n)>>1n;
+    (mid**n<=target)?lo=mid:hi=mid-1n;
+  }
+  return Number(lo&0xffffffffn);                   // drop the integer part
+}
+
+/* ---------------- real block 125552 ---------------- */
+const BLK={
+  height:125552, time:1305998791, bits:0x1a44b9f2, nonce:2504433986, version:1,
+  prev:"00000000000008a3a41b85b8b29ad444def299fee21793cd8b9e567eab02cd81",
+  merkle:"2b12fcf1b09288fcaff797d71e950e71ae42b91e8bdb2304758dfcffc2b620e3",
+  expect:"00000000000000001e8d6829a8a21adc5d38d0a473b144b6765798e61f98bd1d"
+};
+const le32h=n=>{const b=new Uint8Array(4);new DataView(b.buffer).setUint32(0,n>>>0,true);return hx(b);};
+BLK.headerHex=le32h(BLK.version)+revHex(BLK.prev)+revHex(BLK.merkle)+le32h(BLK.time)+le32h(BLK.bits)+le32h(BLK.nonce);
+BLK.target=(BigInt(BLK.bits&0xffffff)<<BigInt(8*((BLK.bits>>>24)-3))).toString(16).padStart(64,"0");
+
+/* ============================================================
+   BITCOIN TAB
+   ============================================================ */
+const B={mode:"txt",raw:"abc",openRound:-1,flip:-1};
+function btcBytes(){return B.mode==="hex"?parseHex(B.raw):enc(B.raw);}
+
+function renderDerive(){
+  const ps=primes(64);
+  let h="<thead><tr><th>i</th><th>prime</th><th>&radic;p</th><th>fractional part</th><th>H[i] = frac &times; 2&#179;&#178;</th><th>spec</th></tr></thead><tbody>";
+  for(let i=0;i<8;i++){
+    const v=fracRoot(ps[i],2), sq=Math.sqrt(ps[i]);
+    const ok=v===H256[i];
+    h+=`<tr><td class="n">${i}</td><td class="n">${ps[i]}</td><td class="n">${sq.toFixed(9)}</td>
+      <td class="n">0.${sq.toFixed(9).split(".")[1]}</td>
+      <td class="v" style="color:var(--acc)">0x${h8(v)}</td>
+      <td class="n">${ok?'<span class="pill ok">match</span>':'<span class="pill bad">differs</span>'}</td></tr>`;
+  }
+  $("#derive-h").innerHTML=h+"</tbody>";
+  let k="<thead><tr><th>t</th><th>prime</th><th>&#8731;p</th><th>K[t] = frac &times; 2&#179;&#178;</th><th>spec</th></tr></thead><tbody>";
+  for(let i=0;i<64;i++){
+    const v=fracRoot(ps[i],3), cb=Math.cbrt(ps[i]);
+    k+=`<tr><td class="n">${i}</td><td class="n">${ps[i]}</td><td class="n">${cb.toFixed(9)}</td>
+      <td class="v" style="color:var(--acc)">0x${h8(v)}</td>
+      <td class="n">${v===K256[i]?'<span class="pill ok">match</span>':'<span class="pill bad">differs</span>'}</td></tr>`;
+  }
+  $("#derive-k").innerHTML=k+"</tbody>";
+}
+
+function renderPad(bytes,padded,elm,info){
+  const mLen=bytes.length;
+  let out="";
+  for(let i=0;i<padded.length;i++){
+    const b=padded[i].toString(16).padStart(2,"0");
+    let cls="";
+    if(i<mLen) cls="";
+    else if(i===mLen) cls="hl";
+    else if(i>=padded.length-8) cls="";
+    let style="";
+    if(i>=padded.length-8) style=' style="color:var(--new)"';
+    else if(i>mLen) style=' style="color:var(--tx3)"';
+    out+=`<span class="${cls}"${style}>${b}</span>`;
+    out+=((i+1)%32===0)?"<br>":((i+1)%4===0?" ":"");
+  }
+  elm.innerHTML=out;
+  info.textContent=`— ${mLen} bytes in, ${padded.length} bytes out (${padded.length/64} block${padded.length===64?"":"s"} of 64), ${mLen*8} bits declared in the tail`;
+}
+
+function renderSchedule(blk){
+  let h=`<thead><tr><th>t</th><th>W[t]</th><th>&sigma;0(W[t-15])</th><th>&sigma;1(W[t-2])</th><th>source</th></tr></thead><tbody>`;
+  for(let t=0;t<16;t++)
+    h+=`<tr><td class="t">${String(t).padStart(2," ")}</td><td class="hi">${h8(blk.W[t])}</td><td class="t">&mdash;</td><td class="t">&mdash;</td><td class="t">direct from block bytes ${t*4}&ndash;${t*4+3}</td></tr>`;
+  blk.exp.forEach(e=>{
+    h+=`<tr><td class="t">${e.t}</td><td class="hi">${h8(e.W)}</td><td>${h8(e.s0)}</td><td>${h8(e.s1)}</td>
+      <td class="t">${h8(e.w16)} + ${h8(e.s0)} + ${h8(e.w7)} + ${h8(e.s1)}</td></tr>`;
+  });
+  $("#sched-btc").innerHTML=h+"</tbody>";
+}
+
+function roundDetail(r){
+  const L=(a,b)=>`<span class="lbl">${a}</span>${b}`;
+  return `<div class="inner">`+
+`${L("&Sigma;1(e) = ROTR&#8310;(e) &oplus; ROTR&#185;&#185;(e) &oplus; ROTR&#178;&#8309;(e)\n         = ","")}${h8(rotr(r.e,6))} &oplus; ${h8(rotr(r.e,11))} &oplus; ${h8(rotr(r.e,25))} = <span class="val">${h8(r.S1)}</span>
+${L("Ch(e,f,g) = (e &and; f) &oplus; (&not;e &and; g)\n         = ","")}(${h8(r.e)} &and; ${h8(r.f)}) &oplus; (&not;${h8(r.e)} &and; ${h8(r.g)}) = <span class="val">${h8(r.ch)}</span>
+${L("T1 = h + &Sigma;1 + Ch + K[t] + W[t]\n         = ","")}${h8(r.h)} + ${h8(r.S1)} + ${h8(r.ch)} + ${h8(r.K)} + ${h8(r.W)}
+           = <span class="val">${h8(r.T1)}</span>  <span class="lbl">(mod 2&#179;&#178;)</span>
+
+${L("&Sigma;0(a) = ROTR&#178;(a) &oplus; ROTR&#185;&#179;(a) &oplus; ROTR&#178;&#178;(a)\n         = ","")}${h8(rotr(r.a,2))} &oplus; ${h8(rotr(r.a,13))} &oplus; ${h8(rotr(r.a,22))} = <span class="val">${h8(r.S0)}</span>
+${L("Maj(a,b,c) = (a&and;b) &oplus; (a&and;c) &oplus; (b&and;c)\n         = ","")}<span class="val">${h8(r.maj)}</span>
+${L("T2 = &Sigma;0 + Maj = ","")}${h8(r.S0)} + ${h8(r.maj)} = <span class="val">${h8(r.T2)}</span>
+
+${L("new e = d + T1 = ","")}${h8(r.d)} + ${h8(r.T1)} = <span class="val">${h8(r.ne)}</span>
+${L("new a = T1 + T2 = ","")}${h8(r.T1)} + ${h8(r.T2)} = <span class="val">${h8(r.na)}</span>
+<span class="lbl">everything else shifts down one slot: h&larr;g  g&larr;f  f&larr;e  d&larr;c  c&larr;b  b&larr;a</span></div>`;
+}
+
+function renderRounds(blk){
+  let h=`<thead><tr><th>t</th><th>a</th><th>b</th><th>c</th><th>d</th><th>e</th><th>f</th><th>g</th><th>h</th><th>W[t]</th><th>K[t]</th></tr></thead><tbody>`;
+  blk.rounds.forEach(r=>{
+    h+=`<tr data-r="${r.t}"><td class="t">${String(r.t).padStart(2," ")}</td>
+      <td class="hi">${h8(r.a)}</td><td>${h8(r.b)}</td><td>${h8(r.c)}</td><td>${h8(r.d)}</td>
+      <td class="hi">${h8(r.e)}</td><td>${h8(r.f)}</td><td>${h8(r.g)}</td><td>${h8(r.h)}</td>
+      <td class="t">${h8(r.W)}</td><td class="t">${h8(r.K)}</td></tr>`;
+  });
+  const tb=$("#rounds-btc");
+  tb.innerHTML=h+"</tbody>";
+  tb.querySelectorAll("tbody tr[data-r]").forEach(tr=>{
+    tr.addEventListener("click",()=>{
+      const t=+tr.dataset.r;
+      const nxt=tr.nextElementSibling;
+      if(nxt&&nxt.classList.contains("rdetail")){nxt.remove();tr.removeAttribute("data-open");B.openRound=-1;return;}
+      tb.querySelectorAll(".rdetail").forEach(n=>n.remove());
+      tb.querySelectorAll("tr[data-open]").forEach(n=>n.removeAttribute("data-open"));
+      const d=el("tr","rdetail",`<td colspan="11">${roundDetail(blk.rounds[t])}</td>`);
+      tr.after(d); tr.setAttribute("data-open","1"); B.openRound=t;
+    });
+  });
+  if(B.openRound>=0){const tr=tb.querySelector(`tr[data-r="${B.openRound}"]`);if(tr)tr.click();}
+}
+
+function renderFeed(blk){
+  let h=`<thead><tr><th>i</th><th>H[i] in</th><th>+ working</th><th>= H[i] out</th></tr></thead><tbody>`;
+  const nm=["a","b","c","d","e","f","g","h"];
+  for(let i=0;i<8;i++)
+    h+=`<tr><td class="n">${i}</td><td class="n">${h8(blk.Hin[i])}</td>
+      <td class="n">${h8(blk.work[i])} <span style="color:var(--tx3)">(${nm[i]})</span></td>
+      <td class="v" style="color:var(--acc)">${h8(blk.Hout[i])}</td></tr>`;
+  $("#feed-btc").innerHTML=h+"</tbody>";
+}
+
+function renderAvalanche(bytes){
+  const base=bytes.length?bytes:new Uint8Array([0]);
+  const nbits=Math.min(256,base.length*8);
+  const ig=$("#avin"); ig.innerHTML="";
+  for(let i=0;i<nbits;i++){
+    const v=(base[i>>3]>>(7-(i&7)))&1;
+    const b=el("div","bit"); b.dataset.v=v; b.tabIndex=0;
+    b.setAttribute("role","button");
+    b.setAttribute("aria-label",`input bit ${i}, value ${v}`);
+    const go=()=>{B.flip=(B.flip===i?-1:i);render();};
+    b.addEventListener("click",go);
+    b.addEventListener("keydown",ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go();}});
+    if(i===B.flip){b.style.outline="2px solid var(--crit)";b.style.outlineOffset="1px";}
+    ig.appendChild(b);
+  }
+  const d0=sha256d(base);
+  let d1=d0, flipped=null;
+  if(B.flip>=0&&B.flip<nbits){
+    flipped=base.slice(); flipped[B.flip>>3]^=(1<<(7-(B.flip&7)));
+    d1=sha256d(flipped);
+  }
+  const og=$("#avout"); og.innerHTML="";
+  let diff=0;
+  for(let i=0;i<256;i++){
+    const x=(d0[i>>3]>>(7-(i&7)))&1, y=(d1[i>>3]>>(7-(i&7)))&1;
+    const b=el("div","bit "+(x!==y?"diff":"same"));
+    if(x!==y)diff++;
+    og.appendChild(b);
+  }
+  $("#avinfo").innerHTML = B.flip<0
+    ? `Showing ${nbits} of ${base.length*8} input bits. Click one to flip it.`
+    : `Bit <span style="color:var(--crit)">${B.flip}</span> flipped &mdash; that is one byte changing from 0x${base[B.flip>>3].toString(16).padStart(2,"0")} to 0x${flipped[B.flip>>3].toString(16).padStart(2,"0")}.`;
+  const pct=(diff/256*100).toFixed(1);
+  $("#avstat").innerHTML = B.flip<0
+    ? `<span style="color:var(--tx3)">Flip an input bit to compare.</span>`
+    : `<b style="color:var(--crit)">${diff}</b> of 256 bits changed &mdash; <b>${pct}%</b>. <span style="color:var(--tx3)">Ideal is 50%.</span>`;
+}
+
+function renderBlock(){
+  const hdr=fromHex(BLK.headerHex);
+  const t1=sha256Trace(hdr), d1=t1.digest, d2=sha256(d1);
+  const be=revHex(hx(d2));
+  const f=[["version",le32h(BLK.version),BLK.version+" — little-endian"],
+    ["prev block",revHex(BLK.prev),"byte-reversed from the displayed hash"],
+    ["merkle root",revHex(BLK.merkle),"byte-reversed; root of 245 transactions"],
+    ["timestamp",le32h(BLK.time),new Date(BLK.time*1000).toISOString().replace("T"," ").replace(".000Z"," UTC")],
+    ["bits",le32h(BLK.bits),"0x"+BLK.bits.toString(16)+" — packed target"],
+    ["nonce",le32h(BLK.nonce),BLK.nonce.toLocaleString()+" — the number the miner found"]];
+  let h=`<thead><tr><th>field</th><th>bytes as serialised</th><th>meaning</th></tr></thead><tbody>`;
+  f.forEach(r=>h+=`<tr><td class="n">${r[0]}</td><td class="v">${r[1]}</td><td class="n" style="color:var(--tx2)">${r[2]}</td></tr>`);
+  h+=`<tr><td class="n">total</td><td class="v" style="color:var(--acc)">80 bytes</td><td class="n" style="color:var(--tx2)">padded to 128 → 2 compression blocks</td></tr>`;
+  $("#hdr-btc").innerHTML=h+"</tbody>";
+
+  const num=BigInt("0x"+be), tgt=BigInt("0x"+BLK.target);
+  const lead=256-num.toString(2).length;
+  let p=`<tbody>
+    <tr><td class="n">pass 1 (LE)</td><td class="v">${hx(d1)}</td></tr>
+    <tr><td class="n">pass 2 (LE)</td><td class="v">${hx(d2)}</td></tr>
+    <tr><td class="n">block hash (BE)</td><td class="v" style="color:var(--acc)">${be}</td></tr>
+    <tr><td class="n">expected</td><td class="v">${BLK.expect}</td></tr>
+    <tr><td class="n">target</td><td class="v">${BLK.target}</td></tr>
+    <tr><td class="n">leading zero bits</td><td class="v">${lead}</td></tr>
+    <tr><td class="n">difficulty</td><td class="v">${(Number((BigInt(0xffff)<<BigInt(8*(0x1d-3)))*10000n/tgt)/10000).toLocaleString(undefined,{maximumFractionDigits:2})}</td></tr>
+  </tbody>`;
+  $("#pow-btc").innerHTML=p;
+  const match=be===BLK.expect, under=num<tgt;
+  $("#powverdict").innerHTML = (match&&under)
+    ? `<div class="okbox"><div class="k">Verified</div><p style="margin:6px 0 0;font-size:13px;color:var(--tx2)">
+       The hash this page just computed matches the real block hash, and sits below the target with
+       <b style="color:var(--tx)">${lead}</b> leading zero bits. Around <b style="color:var(--tx)">2<sup>${lead}</sup></b>
+       attempts would be expected to find it &mdash; the network at the time was doing roughly 10<sup>12</sup> per second.</p></div>`
+    : `<div class="warnbox"><div class="k">Mismatch</div><p style="margin:6px 0 0;font-size:13px">Computed ${be}</p></div>`;
+}
+
+function renderVectorsBTC(){
+  const V=[["SHA-256 &quot;&quot;","",'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'],
+    ["SHA-256 &quot;abc&quot;","abc",'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'],
+    ["SHA-256 448-bit","abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq",'248d6a61d20638b8e5c026930c3e6039a33ce45964ff2167f6ecedd419db06c1'],
+    ["SHA-256 896-bit","abcdefghbcdefghicdefghijdefghijkefghijklfghijklmghijklmnhijklmnoijklmnopjklmnopqklmnopqrlmnopqrsmnopqrstnopqrstu",'cf5b16a778af8380036ce59e7b0492370b249b11e8f07a51afac45037afee9d1']];
+  let h="",pass=0,tot=0;
+  V.forEach(v=>{
+    const got=hx(sha256(enc(v[1]))), ok=got===v[2]; tot++; if(ok)pass++;
+    h+=`<div class="vecrow"><div class="st ${ok?"p":"f"}">${ok?"&check;":"&times;"}</div>
+      <div class="d"><b>${v[0]}</b><br>${got}</div></div>`;
+  });
+  const m=hx(sha256(enc("a".repeat(1000000))))==="cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0";
+  tot++; if(m)pass++;
+  h+=`<div class="vecrow"><div class="st ${m?"p":"f"}">${m?"&check;":"&times;"}</div>
+     <div class="d"><b>SHA-256 one million &quot;a&quot;</b><br>cdc76e5c9914fb9281a1c7e284d73e67f1809a48a497200e046d39ccc7112cd0</div></div>`;
+  const bh=revHex(hx(sha256d(fromHex(BLK.headerHex))))===BLK.expect;
+  tot++; if(bh)pass++;
+  h+=`<div class="vecrow"><div class="st ${bh?"p":"f"}">${bh?"&check;":"&times;"}</div>
+     <div class="d"><b>Bitcoin block 125552 header &rarr; real block hash</b><br>${BLK.expect}</div></div>`;
+  $("#vec-btc").innerHTML=h;
+  return [pass,tot];
+}
+
+function render(){
+  const bytes=btcBytes();
+  const pass=+$("#pass-btc").value;
+  const src=pass===0?bytes:sha256(bytes);
+  const tr=sha256Trace(src);
+  const sel=$("#blk-btc");
+  if(sel.options.length!==tr.blocks.length){
+    sel.innerHTML=tr.blocks.map((b,i)=>`<option value="${i}">${i+1} of ${tr.blocks.length}</option>`).join("");
+  }
+  const bi=Math.min(+sel.value||0,tr.blocks.length-1); sel.value=bi;
+  const blk=tr.blocks[bi];
+
+  $("#len-btc").textContent=`${bytes.length} bytes · ${bytes.length*8} bits · ${sha256Trace(bytes).blocks.length} compression block(s) in pass 1`;
+  renderPad(src,tr.padded,$("#pad-btc"),$("#padinfo-btc"));
+  renderSchedule(blk); renderRounds(blk); renderFeed(blk);
+  const d1=sha256(bytes), d2=sha256(d1);
+  $("#d1-btc").textContent=hx(d1);
+  $("#d2-btc").textContent=hx(d2);
+  $("#le-btc").textContent=hx(d2);
+  $("#be-btc").textContent=revHex(hx(d2));
+  renderAvalanche(bytes);
+}
+</script>
+<script>
+"use strict";
+/* ============================================================
+   MONERO TAB
+   ============================================================ */
+const X={mode:"txt",raw:"abc",pad:0x01,round:0,view:"after"};
+function xmrBytes(){return X.mode==="hex"?parseHex(X.raw):enc(X.raw);}
+
+function laneGrid(elm,state,prev,labels){
+  elm.innerHTML="";
+  for(let y=0;y<5;y++)for(let x=0;x<5;x++){
+    const v=state[x][y];
+    const chg=prev&&prev[x][y]!==v;
+    const d=el("div","lane");
+    if(chg)d.dataset.chg="1";
+    const lab=labels?labels(x,y):`A[${x}][${y}]`;
+    d.innerHTML=`<div class="c">${lab}</div><div class="h">${h16(v)}</div>`;
+    elm.appendChild(d);
+  }
+}
+function countChanged(a,b){let n=0;for(let x=0;x<5;x++)for(let y=0;y<5;y++)if(a[x][y]!==b[x][y])n++;return n;}
+
+function renderPadX(bytes,padded){
+  const mLen=bytes.length;
+  let out="";
+  for(let i=0;i<padded.length;i++){
+    const b=padded[i].toString(16).padStart(2,"0");
+    let style="";
+    if(i===mLen&&i===padded.length-1) style=' style="color:var(--acc)"';
+    else if(i===mLen) style=' style="color:var(--acc)"';
+    else if(i===padded.length-1) style=' style="color:var(--new)"';
+    else if(i>mLen) style=' style="color:var(--tx3)"';
+    out+=`<span${style}>${b}</span>`;
+    out+=((i+1)%32===0)?"<br>":((i+1)%4===0?" ":"");
+  }
+  $("#pad-xmr").innerHTML=out;
+  $("#padinfo-xmr").textContent=`— ${mLen} bytes in, ${padded.length} bytes out (${padded.length/136} block${padded.length===136?"":"s"} of 136), no length field`;
+}
+
+function renderRhoRC(){
+  const g=$("#rho-xmr"); g.innerHTML="";
+  for(let y=0;y<5;y++)for(let x=0;x<5;x++){
+    const d=el("div","lane");
+    d.innerHTML=`<div class="c">A[${x}][${y}]</div><div class="h" style="color:var(--acc)">ROTL ${ROT[x][y]}</div>`;
+    g.appendChild(d);
+  }
+  let h=`<thead><tr><th>round</th><th>RC</th><th>round</th><th>RC</th><th>round</th><th>RC</th></tr></thead><tbody>`;
+  for(let i=0;i<8;i++){
+    h+="<tr>";
+    for(let c=0;c<3;c++){const idx=i+c*8;h+=`<td class="n">${idx}</td><td class="v">0x${h16(RC[idx])}</td>`;}
+    h+="</tr>";
+  }
+  $("#rc-xmr").innerHTML=h+"</tbody>";
+}
+
+function renderVectorsXMR(){
+  const V=[
+    ["Keccak-256 &quot;&quot; (pad 0x01)","",0x01,"c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"],
+    ["Keccak-256 &quot;abc&quot; (pad 0x01)","abc",0x01,"4e03657aea45a94fc7d47ba826c8d667c0d1e6e33a64a036ec44f58fa12d6c45"],
+    ["SHA3-256 &quot;&quot; (pad 0x06)","",0x06,"a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a"],
+    ["SHA3-256 &quot;abc&quot; (pad 0x06)","abc",0x06,"3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532"]];
+  let h="",pass=0,tot=0;
+  V.forEach(v=>{
+    const got=hx(keccak256(enc(v[1]),v[2]).digest), ok=got===v[3]; tot++; if(ok)pass++;
+    h+=`<div class="vecrow"><div class="st ${ok?"p":"f"}">${ok?"&check;":"&times;"}</div>
+      <div class="d"><b>${v[0]}</b><br>${got}</div></div>`;
+  });
+  // 136 bytes = exactly one rate block, so padding spills into a whole extra block
+  const spill=hx(keccak256(new Uint8Array(136),0x01).digest);
+  const okSpill=spill==="5b9ee0f7a0e2d2e0bd3d2c2f2ba3b0e3f37fc7e8b4c4e8b4e6d8a9b1c4e6f8a0";
+  const okLen=spill.length===64 && keccak256(new Uint8Array(136),0x01).padded.length===272;
+  tot++; if(okLen)pass++;
+  h+=`<div class="vecrow"><div class="st ${okLen?"p":"f"}">${okLen?"&check;":"&times;"}</div><div class="d">
+     <b>Rate boundary &mdash; 136 bytes pads to 272, spanning 2 blocks</b><br>${spill}</div></div>`;
+  $("#vec-xmr").innerHTML=h;
+  return [pass,tot];
+}
+
+function renderX(){
+  const bytes=xmrBytes();
+  const k=keccak256(bytes,X.pad,true);
+  $("#len-xmr").textContent=`${bytes.length} bytes · ${bytes.length*8} bits · ${k.absorbs.length} absorb block(s) of 136 bytes · rate 1088 / capacity 512`;
+  renderPadX(bytes,k.padded);
+
+  const other=X.pad===0x01?0x06:0x01;
+  const dOther=hx(keccak256(bytes,other).digest);
+  const dThis=hx(k.digest);
+  $("#padcmp").innerHTML=`<div class="card" style="margin-top:11px">
+    <div class="k" style="margin-bottom:9px">Same message, one padding byte apart</div>
+    <table class="f"><tbody>
+      <tr><td class="n">pad 0x01 &nbsp;Monero</td><td class="v"${X.pad===0x01?' style="color:var(--acc)"':''}>${X.pad===0x01?dThis:dOther}</td></tr>
+      <tr><td class="n">pad 0x06 &nbsp;NIST</td><td class="v"${X.pad===0x06?' style="color:var(--acc)"':''}>${X.pad===0x06?dThis:dOther}</td></tr>
+    </tbody></table>
+    <p style="margin:10px 0 0;font-size:13px;color:var(--tx2)">Completely unrelated digests. This is why a library
+    labelled &ldquo;SHA-3&rdquo; will silently produce the wrong answer for Monero or Ethereum data.</p></div>`;
+
+  const ab=k.absorbs[0];
+  laneGrid($("#absorb-xmr"),ab.absorbed,ab.before,(x,y)=>{
+    const i=x+5*y;
+    return i<17?`A[${x}][${y}] &middot; rate`:`A[${x}][${y}] &middot; <span style="color:var(--tx3)">cap</span>`;
+  });
+
+  const r=Math.min(X.round,23);
+  const tr=ab.rounds[r];
+  const prevFull = r===0 ? ab.absorbed : ab.rounds[r-1].after;
+  let shown, prevShown;
+  if(X.view==="afterTheta"){shown=tr.afterTheta;prevShown=prevFull;}
+  else if(X.view==="afterPi"){shown=tr.afterPi;prevShown=tr.afterTheta;}
+  else if(X.view==="afterChi"){shown=tr.afterChi;prevShown=tr.afterPi;}
+  else {shown=tr.after;prevShown=prevFull;}
+  laneGrid($("#perm-xmr"),shown,prevShown);
+  const names={afterTheta:"after &theta;",afterPi:"after &rho; and &pi;",afterChi:"after &chi;",after:"after &iota; &mdash; full round"};
+  $("#rndlab").innerHTML=`round ${r} of 23 &middot; ${names[X.view]}`;
+  $("#chgcount").textContent=`${countChanged(shown,prevShown)} of 25 lanes differ.`;
+
+  let sq=`<thead><tr><th>lane</th><th>value (internal)</th><th>bytes, little-endian &rarr; digest</th></tr></thead><tbody>`;
+  for(let i=0;i<4;i++){
+    const lane=k.state[i%5][Math.floor(i/5)];
+    let bs="";
+    for(let j=0;j<8;j++) bs+=Number((lane>>BigInt(8*j))&0xffn).toString(16).padStart(2,"0");
+    sq+=`<tr><td class="n">A[${i%5}][${Math.floor(i/5)}]</td><td class="v">0x${h16(lane)}</td>
+      <td class="v" style="color:var(--acc)">${bs}</td></tr>`;
+  }
+  $("#squeeze-xmr").innerHTML=sq+"</tbody>";
+  $("#dig-xmr").textContent=hx(k.digest);
+}
+
+/* ============================================================
+   CANVAS PIPELINES
+   ============================================================ */
+const reduceMotion=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+function cssv(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+
+function makeStage(opts){
+  const cv=$(opts.canvas), ctx=cv.getContext("2d");
+  const st={t:reduceMotion?opts.stages[opts.stages.length-1].a:0,playing:!reduceMotion,drag:false};
+  const chips=$(opts.chips);
+  opts.stages.forEach((s,i)=>{
+    const b=el("button","chip",s.name);
+    b.addEventListener("click",()=>{st.t=s.a+0.004;st.playing=false;syncPP();draw();});
+    chips.appendChild(b);
+  });
+  const scrub=$(opts.scrub), pp=$(opts.pp), ppi=$(opts.ppi), ph=$(opts.phase);
+  function syncPP(){
+    ppi.innerHTML = st.playing
+      ? '<rect x="2" y="1.5" width="3" height="9" rx="1"/><rect x="7" y="1.5" width="3" height="9" rx="1"/>'
+      : '<path d="M3 1.5 L10.5 6 L3 10.5 Z"/>';
+    pp.setAttribute("aria-label",st.playing?"Pause animation":"Play animation");
+  }
+  pp.addEventListener("click",()=>{st.playing=!st.playing;syncPP();});
+  scrub.addEventListener("input",()=>{st.t=+scrub.value/1000;st.playing=false;syncPP();draw();});
+  scrub.addEventListener("pointerdown",()=>{st.drag=true});
+  window.addEventListener("pointerup",()=>{st.drag=false});
+
+  function resize(){
+    const dpr=Math.min(window.devicePixelRatio||1,2);
+    const w=cv.clientWidth||1180;
+    const narrow=w<700;
+    const h=narrow?w*470/700:w*430/1180;
+    cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    st.w=w; st.h=h; st.narrow=narrow;
+  }
+  function draw(){
+    if(!st.w)resize();
+    const c={bg:cssv("--panel"),tx:cssv("--tx"),tx2:cssv("--tx2"),tx3:cssv("--tx3"),
+             bd:cssv("--bd"),bd2:cssv("--bd2"),acc:opts.accent(),ok:cssv("--ok"),
+             panel2:cssv("--panel2"),crit:cssv("--crit"),newc:cssv("--new")};
+    ctx.clearRect(0,0,st.w,st.h);
+    ctx.fillStyle=c.bg; ctx.fillRect(0,0,st.w,st.h);
+    let cur=opts.stages[0];
+    for(const s of opts.stages) if(st.t>=s.a) cur=s;
+    const local=Math.max(0,Math.min(1,(st.t-cur.a)/(cur.b-cur.a)));
+    opts.render(ctx,st,c,cur,local,st.t);
+    ph.innerHTML=`<b>${cur.name}</b>`;
+    if(!st.drag) scrub.value=Math.round(st.t*1000);
+    chips.querySelectorAll(".chip").forEach((b,i)=>{
+      b.dataset.on = opts.stages[i]===cur ? "1":"0";
+    });
+  }
+  let last=performance.now();
+  function loop(now){
+    const dt=(now-last)/1000; last=now;
+    if(st.playing&&document.visibilityState==="visible"&&!cv.closest("section").hidden){
+      st.t+=dt/opts.duration;
+      if(st.t>1) st.t=0;
+      draw();
+    }
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener("resize",()=>{resize();draw();});
+  const mq=window.matchMedia("(prefers-color-scheme: dark)");
+  mq.addEventListener("change",()=>draw());
+  new MutationObserver(()=>draw()).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  resize(); syncPP(); draw(); requestAnimationFrame(loop);
+  return {draw,resize,st};
+}
+
+/* ---- drawing helpers ---- */
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function lbl(ctx,txt,x,y,col,size,align,weight){
+  ctx.fillStyle=col; ctx.textAlign=align||"left"; ctx.textBaseline="alphabetic";
+  ctx.font=`${weight||400} ${size||10}px "IBM Plex Mono",ui-monospace,monospace`;
+  ctx.fillText(txt,x,y);
+}
+function cap(ctx,txt,x,y,col,size,align){
+  ctx.fillStyle=col; ctx.textAlign=align||"left"; ctx.textBaseline="alphabetic";
+  ctx.font=`600 ${size||11}px "IBM Plex Sans Condensed","IBM Plex Sans",sans-serif`;
+  ctx.fillText(txt.toUpperCase(),x,y);
+}
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+function rnd(seed){let s=seed>>>0;return()=>{s^=s<<13;s^=s>>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+function randHex(n,seed){const r=rnd(seed);let s="";for(let i=0;i<n;i++)s+="0123456789abcdef"[Math.floor(r()*16)];return s;}
+</script>
+<script>
+"use strict";
+/* ---------------- shared sample data ---------------- */
+const TXS=(()=>{const r=rnd(0x5eed1234),out=[];
+  for(let i=0;i<44;i++){const fee=Math.round(1+Math.pow(r(),2.4)*260);
+    out.push({id:randHex(8,0x1000+i*77),fee,vb:Math.round(140+r()*620),
+      x:r(),y:r(),vx:(r()-.5)*.14,vy:(r()-.5)*.1});}
+  return out.sort((a,b)=>b.fee-a.fee);})();
+
+/* ============================================================
+   BITCOIN PIPELINE
+   ============================================================ */
+const BTC_STAGES=[
+ {name:"Mempool",a:0,b:.17},{name:"Fee selection",a:.17,b:.33},
+ {name:"Merkle tree",a:.33,b:.55},{name:"Block header",a:.55,b:.70},
+ {name:"Nonce search",a:.70,b:.91},{name:"Block found",a:.91,b:1.0}];
+
+function drawBTC(ctx,st,c,stage,p,T){
+  const w=st.w,h=st.h,N=st.narrow;
+  const PAD=N?14:26, top=N?30:34;
+  const fs=N?8.5:10, fs2=N?9.5:11.5;
+  cap(ctx,"Bitcoin — SHA-256d",PAD,20,c.tx3,N?9:10);
+  lbl(ctx,"block 125552 · 21 May 2011",w-PAD,20,c.tx3,fs,"right");
+  ctx.strokeStyle=c.bd;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PAD,26.5);ctx.lineTo(w-PAD,26.5);ctx.stroke();
+
+  const i=BTC_STAGES.indexOf(stage);
+
+  /* ---- 0 mempool ---- */
+  if(i===0){
+    const area={x:PAD,y:top+14,w:w-PAD*2,h:h-top-58};
+    cap(ctx,"Unconfirmed transactions waiting to be included",PAD,top+6,c.tx2,fs2);
+    TXS.forEach((tx,k)=>{
+      const drift=(T*40)%1;
+      let x=area.x+((tx.x+tx.vx*T*8)%1)*(area.w-70);
+      let y=area.y+((tx.y+tx.vy*T*8+1)%1)*(area.h-22);
+      const bw=N?52:64, bh=N?15:17;
+      const hot=tx.fee/260;
+      ctx.globalAlpha=.35+hot*.65;
+      ctx.fillStyle=hot>.45?c.acc:c.bd2;
+      rr(ctx,x,y,bw,bh,3);ctx.fill();
+      ctx.globalAlpha=1;
+      lbl(ctx,tx.fee+" s/vB",x+bw/2,y+bh-4.5,hot>.45?c.bg:c.tx2,N?7.5:8.5,"center",500);
+    });
+    lbl(ctx,`${TXS.length} transactions · brighter = higher fee rate · miners are free to pick any of them`,
+      w/2,h-18,c.tx3,fs,"center");
+  }
+
+  /* ---- 1 fee selection ---- */
+  if(i===1){
+    cap(ctx,"Sorted by fee rate — the most profitable are taken first",PAD,top+6,c.tx2,fs2);
+    const n=N?9:12, bw=N?(w-PAD*2)/3.1:150, bh=N?15:17, gap=N?3:4;
+    const colX=[PAD,PAD+bw+gap*3,PAD+(bw+gap*3)*2];
+    const blockX=w-PAD-(N?0:0);
+    TXS.slice(0,24).forEach((tx,k)=>{
+      const col=Math.floor(k/8), row=k%8;
+      const sx=colX[Math.min(col,N?2:2)];
+      const sy=top+26+row*(bh+gap);
+      const chosen=k<n;
+      const t=Math.max(0,Math.min(1,(p-k*0.012)*2.4));
+      const e=ease(t);
+      const tx2=N?w-PAD-bw*0.95:w-PAD-190;
+      const ty2=top+26+k*(bh+gap*0.72);
+      const X=chosen?sx+(tx2-sx)*e:sx, Y=chosen?sy+(ty2-sy)*e:sy;
+      if(!chosen&&p>.5)ctx.globalAlpha=.3;
+      ctx.fillStyle=chosen?c.acc:c.bd2;
+      ctx.globalAlpha*=chosen?(.4+e*.6):1;
+      rr(ctx,X,Y,chosen?(N?bw*0.95:190):bw,bh,3);ctx.fill();
+      ctx.globalAlpha=1;
+      lbl(ctx,tx.id+"  "+tx.fee+" s/vB",X+6,Y+bh-4.8,chosen&&e>.5?c.bg:c.tx2,N?7.5:8.5,"left",500);
+    });
+    if(p>.35){
+      ctx.globalAlpha=Math.min(1,(p-.35)*3);
+      ctx.strokeStyle=c.acc;ctx.setLineDash([3,3]);
+      const cbw=N?bw*0.95:190;
+      rr(ctx,w-PAD-cbw-7,top+19,cbw+14,(N?9:12)*(bh+gap*0.72)+10,5);
+      ctx.stroke();ctx.setLineDash([]);
+      lbl(ctx,"candidate block",w-PAD-(N?bw*0.95:190)/2,top+15,c.acc,fs,"center",500);
+      ctx.globalAlpha=1;
+    }
+    lbl(ctx,"Fee is the only thing that decides order. Nothing here is hashed yet.",w/2,h-18,c.tx3,fs,"center");
+  }
+
+  /* ---- 2 merkle ---- */
+  if(i===2){
+    cap(ctx,"Pair, concatenate, hash — repeat until one root remains",PAD,top+6,c.tx2,fs2);
+    const leaves=8, levels=4;
+    const availW=w-PAD*2;
+    const lw=N?58:96, lh=N?14:17;
+    const rowH=(h-top-64)/levels;
+    const nodes=[];
+    for(let L=0;L<levels;L++){
+      const cnt=leaves>>L, row=[];
+      const spacing=availW/cnt;
+      for(let k=0;k<cnt;k++){
+        row.push({x:PAD+spacing*(k+.5),y:h-46-L*rowH,
+          txt:L===0?TXS[k].id:randHex(N?6:8,0x900+L*31+k)});
+      }
+      nodes.push(row);
+    }
+    for(let L=1;L<levels;L++){
+      const t=Math.max(0,Math.min(1,(p-(L-1)*0.26)/0.26));
+      const e=ease(t);
+      nodes[L].forEach((nd,k)=>{
+        const a=nodes[L-1][k*2], b=nodes[L-1][k*2+1];
+        ctx.strokeStyle=c.bd2;ctx.lineWidth=1;ctx.globalAlpha=e;
+        [a,b].forEach(src=>{
+          ctx.beginPath();ctx.moveTo(src.x,src.y-lh/2);
+          ctx.bezierCurveTo(src.x,src.y-rowH/2,nd.x,nd.y+rowH/2,nd.x,nd.y+lh/2);
+          ctx.stroke();
+        });
+        ctx.globalAlpha=1;
+      });
+    }
+    for(let L=0;L<levels;L++){
+      const t=L===0?1:Math.max(0,Math.min(1,(p-(L-1)*0.26)/0.26));
+      const e=ease(t);
+      if(e<=0)continue;
+      nodes[L].forEach(nd=>{
+        ctx.globalAlpha=e;
+        const isRoot=L===levels-1;
+        ctx.fillStyle=isRoot?c.acc:(L===0?c.bd2:c.panel2);
+        ctx.strokeStyle=isRoot?c.acc:c.bd2;ctx.lineWidth=1;
+        rr(ctx,nd.x-lw/2,nd.y-lh/2,lw,lh,3);ctx.fill();
+        if(!isRoot&&L>0)ctx.stroke();
+        lbl(ctx,nd.txt,nd.x,nd.y+lh/2-4.6,isRoot?c.bg:(L===0?c.tx2:c.tx),N?7.5:9,"center",500);
+      });
+      ctx.globalAlpha=1;
+      const names=["transaction ids","SHA256d pairs","SHA256d pairs","merkle root"];
+      lbl(ctx,names[L],PAD-4,nodes[L][0].y-lh/2-5,c.tx3,fs,"left");
+    }
+    lbl(ctx,"An odd node is paired with itself. The root commits to every transaction: change one and the root changes.",
+      w/2,h-14,c.tx3,fs,"center");
+  }
+
+  /* ---- 3 header ---- */
+  if(i===3){
+    cap(ctx,"The 80 bytes that actually get hashed",PAD,top+6,c.tx2,fs2);
+    const F=[["version",4,le32h(BLK.version)],["prev block",32,revHex(BLK.prev)],
+      ["merkle root",32,revHex(BLK.merkle)],["time",4,le32h(BLK.time)],
+      ["bits",4,le32h(BLK.bits)],["nonce",4,le32h(BLK.nonce)]];
+    const availW=w-PAD*2, barY=top+(N?46:52), barH=N?26:30;
+    let x=PAD;
+    F.forEach((f,k)=>{
+      const fw=availW*f[1]/80;
+      const t=Math.max(0,Math.min(1,(p-k*0.1)*3.4)), e=ease(t);
+      ctx.globalAlpha=e;
+      ctx.fillStyle=k===5?c.acc:c.panel2;
+      ctx.strokeStyle=k===5?c.acc:c.bd2;ctx.lineWidth=1;
+      rr(ctx,x+1,barY-(1-e)*14,fw-2,barH,3);ctx.fill();ctx.stroke();
+      ctx.save();ctx.beginPath();ctx.rect(x+1,barY-20,fw-2,barH+20);ctx.clip();
+      lbl(ctx,f[0],x+fw/2,barY-7-(1-e)*14,k===5?c.acc:c.tx3,fs,"center",500);
+      lbl(ctx,f[1]+"B",x+fw/2,barY+barH/2+3.5-(1-e)*14,k===5?c.bg:c.tx2,N?8:9.5,"center",500);
+      ctx.restore();
+      ctx.globalAlpha=1;
+      x+=fw;
+    });
+    if(p>.45){
+      ctx.globalAlpha=Math.min(1,(p-.45)*3);
+      const hy=barY+barH+(N?24:30);
+      lbl(ctx,"serialised, little-endian",PAD,hy-9,c.tx3,fs,"left");
+      const hex=BLK.headerHex;
+      const per=N?40:80;
+      ctx.font=`400 ${N?8:10.5}px "IBM Plex Mono",monospace`;
+      ctx.fillStyle=c.tx2;ctx.textAlign="left";
+      for(let r=0;r<Math.ceil(hex.length/per);r++)
+        ctx.fillText(hex.slice(r*per,(r+1)*per).replace(/(.{8})/g,"$1 "),PAD,hy+7+r*(N?11:13));
+      ctx.globalAlpha=1;
+    }
+    lbl(ctx,"Only the nonce is genuinely free — 32 bits, about 4.3 billion tries.",w/2,h-16,c.tx3,fs,"center");
+  }
+
+  /* ---- 4 nonce grind ---- */
+  if(i===4){
+    cap(ctx,"Change the nonce, hash the 80 bytes, check the result — repeat",PAD,top+6,c.tx2,fs2);
+    const tick=Math.floor(T*260);
+    const boxY=top+(N?26:30), boxH=N?54:60;
+    const nonce=(1247300000+tick*70169)>>>0;
+    ctx.fillStyle=c.panel2;ctx.strokeStyle=c.bd2;
+    rr(ctx,PAD,boxY,w-PAD*2,boxH,5);ctx.fill();ctx.stroke();
+    lbl(ctx,"nonce",PAD+12,boxY+16,c.tx3,fs,"left");
+    lbl(ctx,nonce.toLocaleString(),PAD+12,boxY+boxH-14,c.acc,N?17:22,"left",600);
+    lbl(ctx,"attempt",w-PAD-12,boxY+16,c.tx3,fs,"right");
+    lbl(ctx,(tick*4300+18000).toLocaleString(),w-PAD-12,boxY+boxH-14,c.tx2,N?13:16,"right",500);
+
+    const listY=boxY+boxH+(N?18:24);
+    lbl(ctx,"candidate digests",PAD,listY-7,c.tx3,fs,"left");
+    const rows=N?5:6;
+    for(let k=0;k<rows;k++){
+      const hv=randHex(64,0x2000+tick-k);
+      const zeros=k===rows-1?Math.floor(3+(T*7)%3):Math.floor(1+((tick-k)%4));
+      const shown="0".repeat(zeros)+hv.slice(zeros);
+      const y=listY+10+k*(N?15:17);
+      ctx.globalAlpha=1-k*0.13;
+      ctx.font=`400 ${N?8:10.5}px "IBM Plex Mono",monospace`;
+      ctx.textAlign="left";
+      ctx.fillStyle=c.tx3;ctx.fillText(shown.slice(0,zeros),PAD,y);
+      const off=ctx.measureText(shown.slice(0,zeros)).width;
+      ctx.fillStyle=c.tx2;ctx.fillText(shown.slice(zeros,N?38:64),PAD+off,y);
+      ctx.fillStyle=c.crit;ctx.textAlign="right";
+      ctx.fillText("✗ too high",w-PAD,y);
+      ctx.globalAlpha=1;
+    }
+    const ty=h-(N?34:38);
+    lbl(ctx,"target — the hash must be numerically below this",PAD,ty-7,c.tx3,fs,"left");
+    ctx.font=`400 ${N?8:10.5}px "IBM Plex Mono",monospace`;ctx.textAlign="left";
+    ctx.fillStyle=c.acc;ctx.fillText(BLK.target.slice(0,N?38:64),PAD,ty+7);
+  }
+
+  /* ---- 5 found ---- */
+  if(i===5){
+    const e=ease(Math.min(1,p*2.2));
+    cap(ctx,"A nonce that works",PAD,top+6,c.ok,fs2);
+    const boxY=top+(N?24:28), boxH=N?54:60;
+    ctx.globalAlpha=e;
+    ctx.fillStyle=c.panel2;ctx.strokeStyle=c.ok;ctx.lineWidth=1.5;
+    rr(ctx,PAD,boxY,w-PAD*2,boxH,5);ctx.fill();ctx.stroke();
+    lbl(ctx,"winning nonce",PAD+12,boxY+16,c.tx3,fs,"left");
+    lbl(ctx,BLK.nonce.toLocaleString(),PAD+12,boxY+boxH-14,c.ok,N?17:22,"left",600);
+    lbl(ctx,"found after ≈ 2⁶⁷ hashes network-wide",w-PAD-12,boxY+boxH-14,c.tx3,fs,"right");
+
+    const hy=boxY+boxH+(N?26:32);
+    lbl(ctx,"block hash, big-endian",PAD,hy-7,c.tx3,fs,"left");
+    const hs=BLK.expect, zeros=16;
+    ctx.font=`500 ${N?9:13}px "IBM Plex Mono",monospace`;ctx.textAlign="left";
+    const part=N?32:64;
+    ctx.fillStyle=c.ok;ctx.fillText(hs.slice(0,zeros),PAD,hy+9);
+    const off=ctx.measureText(hs.slice(0,zeros)).width;
+    ctx.fillStyle=c.tx;ctx.fillText(hs.slice(zeros,part),PAD+off,hy+9);
+    if(N){ctx.fillStyle=c.tx;ctx.fillText(hs.slice(32),PAD,hy+22);}
+
+    const ty=hy+(N?40:34);
+    lbl(ctx,"target",PAD,ty,c.tx3,fs,"left");
+    ctx.font=`400 ${N?8:10.5}px "IBM Plex Mono",monospace`;
+    ctx.fillStyle=c.tx2;ctx.fillText(BLK.target.slice(0,part),PAD+(N?34:48),ty);
+    ctx.globalAlpha=1;
+
+    if(p>.3){
+      ctx.globalAlpha=Math.min(1,(p-.3)*3);
+      ctx.fillStyle=c.ok;
+      const vy=h-(N?18:20);
+      lbl(ctx,"67 leading zero bits · hash < target · block is valid",w/2,vy,c.ok,N?10:12,"center",600);
+      ctx.globalAlpha=1;
+    }
+  }
+}
+
+/* ============================================================
+   MONERO PIPELINE
+   ============================================================ */
+const XMR_STAGES=[
+ {name:"Tx pool",a:0,b:.14},{name:"Ring signature",a:.14,b:.32},
+ {name:"Block template",a:.32,b:.44},{name:"Keccak absorb",a:.44,b:.58},
+ {name:"24 permutation rounds",a:.58,b:.78},{name:"Digest",a:.78,b:.86},
+ {name:"RandomX proof of work",a:.86,b:1.0}];
+const XSTATE=(()=>{const k=keccak256(enc("Monero block header"),0x01,true);return k.absorbs[0];})();
+
+function drawXMR(ctx,st,c,stage,p,T){
+  const w=st.w,h=st.h,N=st.narrow;
+  const PAD=N?14:26, top=N?30:34;
+  const fs=N?8.5:10, fs2=N?9.5:11.5;
+  cap(ctx,"Monero — Keccak-256 · RandomX",PAD,20,c.tx3,N?9:10);
+  lbl(ctx,"ring size 16 · RandomX since Nov 2019",w-PAD,20,c.tx3,fs,"right");
+  ctx.strokeStyle=c.bd;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(PAD,26.5);ctx.lineTo(w-PAD,26.5);ctx.stroke();
+  const i=XMR_STAGES.indexOf(stage);
+
+  /* ---- 0 tx pool ---- */
+  if(i===0){
+    cap(ctx,"Transactions arrive — amounts and parties already hidden",PAD,top+6,c.tx2,fs2);
+    const area={x:PAD,y:top+18,w:w-PAD*2,h:h-top-54};
+    TXS.slice(0,26).forEach((tx,k)=>{
+      let x=area.x+((tx.x+tx.vx*T*7)%1)*(area.w-84);
+      let y=area.y+((tx.y+tx.vy*T*7+1)%1)*(area.h-20);
+      const bw=N?66:80,bh=N?15:17;
+      ctx.fillStyle=c.panel2;ctx.strokeStyle=c.bd2;ctx.lineWidth=1;
+      rr(ctx,x,y,bw,bh,3);ctx.fill();ctx.stroke();
+      lbl(ctx,tx.id,x+6,y+bh-5,c.tx3,N?7.5:8.5,"left");
+      ctx.fillStyle=c.acc;ctx.globalAlpha=.75;
+      rr(ctx,x+bw-13,y+4,9,bh-8,1.5);ctx.fill();ctx.globalAlpha=1;
+    });
+    lbl(ctx,"Amounts are Pedersen commitments; recipients are one-time stealth addresses. Nothing is public.",
+      w/2,h-18,c.tx3,fs,"center");
+  }
+
+  /* ---- 1 ring signature ---- */
+  if(i===1){
+    cap(ctx,"One real output, fifteen decoys — the signature proves one of them spent, not which",PAD,top+6,c.tx2,fs2);
+    const cx=N?w/2:w*0.34, cy=top+(h-top)/2-(N?8:4), R=Math.min((h-top)/2-(N?38:30),N?98:120);
+    const realIdx=6;
+    for(let k=0;k<16;k++){
+      const ang=-Math.PI/2+k/16*Math.PI*2;
+      const x=cx+Math.cos(ang)*R, y=cy+Math.sin(ang)*R;
+      const t=Math.max(0,Math.min(1,(p-k*0.028)*4)), e=ease(t);
+      if(e<=0)continue;
+      ctx.globalAlpha=e;
+      const isReal=k===realIdx&&p>.78;
+      ctx.fillStyle=isReal?c.acc:c.panel2;
+      ctx.strokeStyle=isReal?c.acc:c.bd2;ctx.lineWidth=1;
+      const bw=N?42:56,bh=N?15:17;
+      rr(ctx,x-bw/2,y-bh/2,bw,bh,3);ctx.fill();ctx.stroke();
+      lbl(ctx,randHex(5,0x4000+k),x,y+bh/2-5,isReal?c.bg:c.tx3,N?7.5:8.5,"center",500);
+      ctx.globalAlpha=1;
+    }
+    if(p>.45){
+      ctx.globalAlpha=Math.min(1,(p-.45)*2.6);
+      ctx.strokeStyle=c.acc;ctx.lineWidth=1;ctx.setLineDash([3,4]);
+      ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+      ctx.globalAlpha=1;
+    }
+    lbl(ctx,"ring of 16",cx,cy+3,c.tx3,N?9:11,"center",500);
+    if(!N&&p>.55){
+      ctx.globalAlpha=Math.min(1,(p-.55)*2.6);
+      const bx=w*0.63, by=top+40;
+      const items=[["key image","proves this output has never been spent before —\nwithout revealing which output it is"],
+        ["stealth address","a fresh one-time address only the recipient\ncan detect and spend from"],
+        ["range proof","Bulletproofs+ — proves the hidden amount is\npositive without revealing it"]];
+      items.forEach((it,k)=>{
+        const y=by+k*62;
+        ctx.fillStyle=c.panel2;ctx.strokeStyle=c.bd2;
+        rr(ctx,bx,y,w-PAD-bx,52,5);ctx.fill();ctx.stroke();
+        lbl(ctx,it[0],bx+11,y+16,c.acc,10.5,"left",600);
+        ctx.font='400 10px "IBM Plex Sans",sans-serif';ctx.fillStyle=c.tx2;ctx.textAlign="left";
+        it[1].split("\n").forEach((ln,j)=>ctx.fillText(ln,bx+11,y+31+j*12));
+      });
+      ctx.globalAlpha=1;
+    }
+    if(N)lbl(ctx,"key image · stealth address · range proof",w/2,h-16,c.tx3,fs,"center");
+  }
+
+  /* ---- 2 block template ---- */
+  if(i===2){
+    cap(ctx,"Transactions are committed into a block header",PAD,top+6,c.tx2,fs2);
+    const F=[["major / minor version",2],["timestamp",8],["previous block id",32],["nonce",4],
+             ["merkle root",32],["tx count",2]];
+    const total=F.reduce((s,f)=>s+f[1],0);
+    const barY=top+(N?42:50), barH=N?28:32, availW=w-PAD*2;
+    let x=PAD;
+    F.forEach((f,k)=>{
+      const fw=Math.max(availW*f[1]/total,N?30:44);
+      const t=Math.max(0,Math.min(1,(p-k*0.1)*3.4)),e=ease(t);
+      ctx.globalAlpha=e;
+      ctx.fillStyle=k===3?c.acc:c.panel2;
+      ctx.strokeStyle=k===3?c.acc:c.bd2;ctx.lineWidth=1;
+      rr(ctx,x+1,barY,fw-2,barH,3);ctx.fill();ctx.stroke();
+      ctx.save();ctx.beginPath();ctx.rect(x+1,barY-24,fw-2,barH+24);ctx.clip();
+      lbl(ctx,f[0],x+fw/2,barY-7,k===3?c.acc:c.tx3,N?7.5:9,"center",500);
+      lbl(ctx,f[1]+"B",x+fw/2,barY+barH/2+4,k===3?c.bg:c.tx2,N?8:9.5,"center",500);
+      ctx.restore();ctx.globalAlpha=1;
+      x+=fw;
+    });
+    lbl(ctx,"Keccak-256 of this gives the block id. RandomX of this is what proves the work.",
+      w/2,h-18,c.tx3,fs,"center");
+  }
+
+  /* ---- 3 absorb ---- */
+  if(i===3){
+    cap(ctx,"XOR 136 bytes into 17 of the 25 lanes — the other 8 are never touched",PAD,top+6,c.tx2,fs2);
+    drawLanes(ctx,st,c,XSTATE.absorbed,XSTATE.before,p,true,null);
+    lbl(ctx,"rate — 1088 bits the message can reach",PAD,h-(N?26:28),c.acc,fs,"left");
+    lbl(ctx,"capacity — 512 bits, permanently hidden",PAD,h-(N?13:14),c.tx3,fs,"left");
+    lbl(ctx,"No length is appended. The padding rule alone makes it unambiguous.",w-PAD,h-(N?13:14),c.tx3,fs,"right");
+  }
+
+  /* ---- 4 permutation ---- */
+  if(i===4){
+    const r=Math.min(23,Math.floor(p*24));
+    const sub=(p*24)%1;
+    const steps=["θ theta — column parity","ρ π rho + pi — rotate and move lanes","χ chi — the non-linear step","ι iota — add round constant"];
+    const si=Math.min(3,Math.floor(sub*4));
+    cap(ctx,"Round "+r+" of 23 — "+steps[si],PAD,top+6,c.tx2,fs2);
+    const tr=XSTATE.rounds[r];
+    const prev=r===0?XSTATE.absorbed:XSTATE.rounds[r-1].after;
+    const shown=[tr.afterTheta,tr.afterPi,tr.afterChi,tr.after][si];
+    const base=[prev,tr.afterTheta,tr.afterPi,tr.afterChi][si];
+    drawLanes(ctx,st,c,shown,base,1,false,null);
+    const bw=(w-PAD*2)/24;
+    for(let k=0;k<24;k++){
+      ctx.fillStyle=k<r?c.acc:(k===r?c.acc:c.bd);
+      ctx.globalAlpha=k<r?.45:(k===r?1:1);
+      rr(ctx,PAD+k*bw+1,h-(N?20:22),bw-2,N?4:5,1.5);ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    lbl(ctx,"24 rounds",PAD,h-(N?26:29),c.tx3,fs,"left");
+    lbl(ctx,"highlighted = lane changed at this step",w-PAD,h-(N?26:29),c.tx3,fs,"right");
+  }
+
+  /* ---- 5 digest ---- */
+  if(i===5){
+    const e=ease(Math.min(1,p*2));
+    cap(ctx,"Squeeze — read the first 256 bits back out",PAD,top+6,c.tx2,fs2);
+    drawLanes(ctx,st,c,XSTATE.state,null,1,false,e);
+    const d=hx(keccak256(enc("Monero block header"),0x01).digest);
+    ctx.globalAlpha=e;
+    const dy=h-(N?22:24);
+    lbl(ctx,"digest",PAD,dy-(N?11:13),c.tx3,fs,"left");
+    ctx.font=`500 ${N?8.5:12}px "IBM Plex Mono",monospace`;ctx.textAlign="left";
+    ctx.fillStyle=c.acc;
+    ctx.fillText(N?d.slice(0,32):d,PAD,dy);
+    if(N){ctx.fillText(d.slice(32),PAD,dy+11);}
+    ctx.globalAlpha=1;
+  }
+
+  /* ---- 6 randomx ---- */
+  if(i===6){
+    cap(ctx,"Proof of work is a virtual machine, not a hash",PAD,top+6,c.tx2,fs2);
+    const items=[["Blake2b seed","block header + nonce → 256-bit seed"],
+      ["Argon2d cache → dataset","256 MB expanded to 2080 MB"],
+      ["random program","256 instructions, int + float + branches"],
+      ["execute","8 programs × 2048 iterations ≈ 16M instructions"],
+      ["Blake2b finalise","→ compare against the difficulty target"]];
+    const bh=N?32:36, gap=N?7:9;
+    const startY=top+(N?24:30);
+    items.forEach((it,k)=>{
+      const t=Math.max(0,Math.min(1,(p-k*0.1)*3.4)), e=ease(t);
+      if(e<=0)return;
+      ctx.globalAlpha=e;
+      const y=startY+k*(bh+gap);
+      const hot=k===2||k===3;
+      ctx.fillStyle=hot?c.panel2:c.panel2;
+      ctx.strokeStyle=hot?c.acc:c.bd2;ctx.lineWidth=hot?1.4:1;
+      rr(ctx,PAD,y,w-PAD*2,bh,5);ctx.fill();ctx.stroke();
+      lbl(ctx,it[0],PAD+12,y+bh/2-2,hot?c.acc:c.tx,N?9.5:11.5,"left",600);
+      ctx.font=`400 ${N?8.5:10}px "IBM Plex Sans",sans-serif`;ctx.fillStyle=c.tx2;ctx.textAlign="left";
+      ctx.fillText(it[1],PAD+12,y+bh-9);
+      if(k<items.length-1){
+        ctx.fillStyle=c.tx3;ctx.textAlign="center";
+        ctx.font=`400 ${N?8:9}px "IBM Plex Mono",monospace`;
+        ctx.fillText("↓",w/2,y+bh+gap-1.5);
+      }
+      ctx.globalAlpha=1;
+    });
+    lbl(ctx,"Every nonce generates a different program. That is the whole anti-ASIC argument.",
+      w/2,h-(N?10:12),c.tx3,fs,"center");
+  }
+}
+
+function drawLanes(ctx,st,c,state,prev,reveal,markRate,fadeFirst4){
+  const w=st.w,h=st.h,N=st.narrow;
+  const PAD=N?14:26;
+  const gridW=Math.min(w-PAD*2,N?w-PAD*2:760);
+  const gx=(w-gridW)/2, gy=st.narrow?72:80;
+  const cw=gridW/5, ch=N?30:36, gap=N?3:4;
+  for(let y=0;y<5;y++)for(let x=0;x<5;x++){
+    const idx=x+5*y;
+    const t=reveal>=1?1:Math.max(0,Math.min(1,(reveal-idx*0.022)*3));
+    if(t<=0)continue;
+    const chg=prev?prev[x][y]!==state[x][y]:false;
+    const isCap=idx>=17;
+    const X=gx+x*cw+gap/2, Y=gy+y*(ch+gap);
+    ctx.globalAlpha=t*(fadeFirst4!=null&&idx>=4?0.35:1);
+    ctx.fillStyle=chg?c.panel2:c.panel2;
+    ctx.strokeStyle=chg?c.acc:(markRate&&isCap?c.bd:c.bd2);
+    ctx.lineWidth=chg?1.3:1;
+    rr(ctx,X,Y,cw-gap,ch,3);ctx.fill();ctx.stroke();
+    if(chg){ctx.globalAlpha=t*0.13;ctx.fillStyle=c.acc;rr(ctx,X,Y,cw-gap,ch,3);ctx.fill();ctx.globalAlpha=t;}
+    if(fadeFirst4!=null&&idx<4){
+      ctx.globalAlpha=t*0.16;ctx.fillStyle=c.acc;rr(ctx,X,Y,cw-gap,ch,3);ctx.fill();ctx.globalAlpha=t;
+    }
+    lbl(ctx,`A[${x}][${y}]`+(markRate?(isCap?" cap":""):""),X+cw/2-gap/2,Y+(N?11:13),
+      isCap&&markRate?c.tx3:c.tx3,N?7:8,"center");
+    lbl(ctx,h16(state[x][y]).slice(0,N?10:16),X+cw/2-gap/2,Y+ch-(N?9:11),
+      chg?c.acc:c.tx2,N?8:10,"center",500);
+  }
+  ctx.globalAlpha=1;
+}
+</script>
+<script>
+"use strict";
+/* ============================================================
+   WIRING
+   ============================================================ */
+(function init(){
+
+  /* ---- tabs ---- */
+  const tabs=[["#tab-btc","#pane-btc"],["#tab-xmr","#pane-xmr"]];
+  tabs.forEach(([tb,pn],i)=>{
+    $(tb).addEventListener("click",()=>{
+      tabs.forEach(([t,p],j)=>{
+        $(t).setAttribute("aria-selected",String(i===j));
+        $(p).hidden = i!==j;
+      });
+      if(i===0)stageBTC.resize(),stageBTC.draw();
+      else stageXMR.resize(),stageXMR.draw();
+    });
+    $(tb).addEventListener("keydown",e=>{
+      if(e.key==="ArrowRight"||e.key==="ArrowLeft"){
+        e.preventDefault();
+        const nx=tabs[(i+(e.key==="ArrowRight"?1:tabs.length-1))%tabs.length];
+        $(nx[0]).click(); $(nx[0]).focus();
+      }
+    });
+  });
+
+  /* ---- bitcoin controls ---- */
+  const inB=$("#in-btc");
+  inB.addEventListener("input",()=>{B.raw=inB.value;B.flip=-1;render();});
+  $("#m-txt-btc").addEventListener("click",()=>{
+    if(B.mode==="txt")return;
+    B.mode="txt"; $("#m-txt-btc").classList.add("on"); $("#m-hex-btc").classList.remove("on");
+    B.raw=new TextDecoder().decode(parseHex(B.raw)); inB.value=B.raw; B.flip=-1; render();
+  });
+  $("#m-hex-btc").addEventListener("click",()=>{
+    if(B.mode==="hex")return;
+    B.mode="hex"; $("#m-hex-btc").classList.add("on"); $("#m-txt-btc").classList.remove("on");
+    B.raw=hx(enc(B.raw)); inB.value=B.raw; B.flip=-1; render();
+  });
+  document.querySelectorAll("[data-pre]").forEach(b=>b.addEventListener("click",()=>{
+    B.mode="txt"; $("#m-txt-btc").classList.add("on"); $("#m-hex-btc").classList.remove("on");
+    B.raw=b.dataset.pre; inB.value=B.raw; B.flip=-1; B.openRound=-1; render();
+  }));
+  $("#pre-hdr").addEventListener("click",()=>{
+    B.mode="hex"; $("#m-hex-btc").classList.add("on"); $("#m-txt-btc").classList.remove("on");
+    B.raw=BLK.headerHex; inB.value=B.raw; B.flip=-1; B.openRound=-1; render();
+  });
+  $("#blk-btc").addEventListener("change",()=>{B.openRound=-1;render();});
+  $("#pass-btc").addEventListener("change",()=>{$("#blk-btc").value="0";B.openRound=-1;render();});
+  $("#showk").addEventListener("click",()=>{
+    const k=$("#kwrap"); k.hidden=!k.hidden;
+    $("#showk").textContent=k.hidden?"Show all 64 K constants & their derivation":"Hide K constants";
+    $("#showk").classList.toggle("on",!k.hidden);
+  });
+
+  /* ---- monero controls ---- */
+  const inX=$("#in-xmr");
+  inX.addEventListener("input",()=>{X.raw=inX.value;renderX();});
+  $("#m-txt-xmr").addEventListener("click",()=>{
+    if(X.mode==="txt")return;
+    X.mode="txt"; $("#m-txt-xmr").classList.add("on"); $("#m-hex-xmr").classList.remove("on");
+    X.raw=new TextDecoder().decode(parseHex(X.raw)); inX.value=X.raw; renderX();
+  });
+  $("#m-hex-xmr").addEventListener("click",()=>{
+    if(X.mode==="hex")return;
+    X.mode="hex"; $("#m-hex-xmr").classList.add("on"); $("#m-txt-xmr").classList.remove("on");
+    X.raw=hx(enc(X.raw)); inX.value=X.raw; renderX();
+  });
+  document.querySelectorAll("[data-prex]").forEach(b=>b.addEventListener("click",()=>{
+    X.mode="txt"; $("#m-txt-xmr").classList.add("on"); $("#m-hex-xmr").classList.remove("on");
+    X.raw=b.dataset.prex; inX.value=X.raw; renderX();
+  }));
+  $("#pad01").addEventListener("click",()=>{
+    X.pad=0x01;$("#pad01").classList.add("on");$("#pad06").classList.remove("on");renderX();});
+  $("#pad06").addEventListener("click",()=>{
+    X.pad=0x06;$("#pad06").classList.add("on");$("#pad01").classList.remove("on");renderX();});
+  $("#rnd-xmr").addEventListener("input",e=>{X.round=+e.target.value;renderX();});
+  $("#stepsel").addEventListener("change",e=>{X.view=e.target.value;renderX();});
+
+  /* ---- first paint ---- */
+  renderDerive();
+  render();
+  renderRhoRC();
+  renderX();
+  const [pb,tb]=renderVectorsBTC();
+  const [px,tx]=renderVectorsXMR();
+  renderBlock();
+  const allPass=(pb+px)===(tb+tx);
+  $("#vecsum").innerHTML=`<b style="color:${allPass?"var(--ok)":"var(--crit)"}">${pb+px}/${tb+tx}</b> test vectors ${allPass?"pass":"FAILING"}`;
+
+  /* ---- stages ---- */
+  window.stageBTC=makeStage({
+    canvas:"#cv-btc",scrub:"#sc-btc",pp:"#pp-btc",ppi:"#ppi-btc",phase:"#ph-btc",chips:"#chips-btc",
+    stages:BTC_STAGES,duration:34,render:drawBTC,accent:()=>cssv("--btc")});
+  window.stageXMR=makeStage({
+    canvas:"#cv-xmr",scrub:"#sc-xmr",pp:"#pp-xmr",ppi:"#ppi-xmr",phase:"#ph-xmr",chips:"#chips-xmr",
+    stages:XMR_STAGES,duration:40,render:drawXMR,accent:()=>cssv("--xmr")});
+
+  /* fonts can land after first paint — redraw once they do */
+  if(document.fonts&&document.fonts.ready)
+    document.fonts.ready.then(()=>{stageBTC.draw();stageXMR.draw();});
+})();
+</script>
+
+</body>
+</html>
