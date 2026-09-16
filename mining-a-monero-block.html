@@ -452,9 +452,9 @@ B &gt; 2M  &rarr;  block invalid</div>
             <thead><tr><th>Block weight</th><th class="n">Penalty</th><th class="n">Reward kept</th><th class="n">Break-even fee, marginal kB</th></tr></thead>
             <tbody>
               <tr><td>300 kB &middot; 1.00&times; M</td><td class="n">0</td><td class="n">0.6000</td><td class="n">0 <em>&mdash; free</em></td></tr>
-              <tr><td>330 kB &middot; 1.10&times; M</td><td class="n">1.0%</td><td class="n">0.5940</td><td class="n">0.00020 XMR/kB</td></tr>
-              <tr><td>375 kB &middot; 1.25&times; M</td><td class="n">6.3%</td><td class="n">0.5625</td><td class="n">0.00050 XMR/kB</td></tr>
-              <tr><td>450 kB &middot; 1.50&times; M</td><td class="n">25.0%</td><td class="n">0.4500</td><td class="n">0.00100 XMR/kB</td></tr>
+              <tr><td>330 kB &middot; 1.10&times; M</td><td class="n">1.0%</td><td class="n">0.5940</td><td class="n">0.00040 XMR/kB</td></tr>
+              <tr><td>375 kB &middot; 1.25&times; M</td><td class="n">6.3%</td><td class="n">0.5625</td><td class="n">0.00100 XMR/kB</td></tr>
+              <tr><td>450 kB &middot; 1.50&times; M</td><td class="n">25.0%</td><td class="n">0.4500</td><td class="n">0.00200 XMR/kB</td></tr>
               <tr class="row-hot"><td>600 kB &middot; 2.00&times; M</td><td class="n">100%</td><td class="n">0.0000</td><td class="n">&mdash; <em>ceiling</em></td></tr>
             </tbody>
           </table>
@@ -564,7 +564,7 @@ M = min( max(short_term_median, long_term_median), 50 &times; long_term_median )
           <text class="svg-small" x="267" y="138" text-anchor="middle">256 MB</text>
 
           <path class="flow-hot" d="M342 111 H396 V70 H450" marker-end="url(#rx-hot)"/>
-          <text class="svg-small hot-text" x="400" y="60" text-anchor="start">SuperscalarHash · seconds to a minute</text>
+          <text class="svg-small hot-text" x="541" y="32" text-anchor="middle">SuperscalarHash · seconds to a minute</text>
 
           <rect class="box-hot" x="456" y="42" width="170" height="56"/>
           <text class="svg-label hot-text" x="541" y="66" text-anchor="middle">dataset · 2 GB</text>
@@ -576,7 +576,7 @@ M = min( max(short_term_median, long_term_median), 50 &times; long_term_median )
           <text class="svg-small hot-text" x="782" y="84" text-anchor="middle">billions of hashes</text>
 
           <path class="flow-cool" d="M342 139 H396 V196 H686" marker-end="url(#rx-cool)"/>
-          <text class="svg-small cool-text" x="400" y="186" text-anchor="start">light mode · no expansion, ~10× slower per hash</text>
+          <text class="svg-small cool-text" x="400" y="186" text-anchor="start">light mode · ~10× slower per hash</text>
 
           <rect class="box-cool" x="692" y="168" width="180" height="56"/>
           <text class="svg-label cool-text" x="782" y="192" text-anchor="middle">EVERY OTHER NODE</text>
@@ -629,7 +629,7 @@ M = min( max(short_term_median, long_term_median), 50 &times; long_term_median )
               <tr><td>Float add / sub</td><td>FADD_R, FSUB_R, FADD_M, FSUB_M</td><td class="n">42</td><td><em>IEEE-754 addition with correct rounding</em></td></tr>
               <tr><td>Float other</td><td>FDIV_M, FSQRT_R, FSCAL_R, FSWAP_R</td><td class="n">20</td><td><em>division and square-root units</em></td></tr>
               <tr class="row-hot"><td>Branch</td><td>CBRANCH</td><td class="n">25</td><td><em>branch prediction and speculative execution</em></td></tr>
-              <tr><td>Integer multiply</td><td>IMUL_R, IMULH_R, ISMULH_R, IMUL_RCP</td><td class="n">33</td><td><em>64&times;64&rarr;128 multiply, signed and unsigned</em></td></tr>
+              <tr><td>Integer multiply</td><td>IMUL_R, IMULH_R, ISMULH_R, IMUL_RCP</td><td class="n">32</td><td><em>64&times;64&rarr;128 multiply, signed and unsigned</em></td></tr>
               <tr><td>Integer ALU</td><td>IADD_RS, ISUB_R, IXOR_R, IROR_R &hellip;</td><td class="n">~70</td><td><em>a full ALU with shifts and rotates</em></td></tr>
               <tr><td>Memory</td><td>ISTORE and the <code>_M</code> load forms</td><td class="n">~40</td><td><em>load / store units and cache</em></td></tr>
               <tr class="row-hot"><td>Rounding mode</td><td>CFROUND</td><td class="n">1</td><td><em>all four IEEE rounding modes, switchable at runtime</em></td></tr>
